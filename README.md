@@ -4,7 +4,7 @@ Hi, my name is Al-Amine Maouloud!
 💻 Passionate about Data, Artificial Intelligence, and Development  
 📍 Currently looking for an internship (April 2026) in the field of Data & AI  
 
-##About me : 
+About me : 
 
 - Solid foundations in Python, SQL, HTML/CSS programming and Finance
 - Interested in data Analysis/Scientist/Engineer, machine learning, web development and Finance
@@ -13,18 +13,18 @@ Hi, my name is Al-Amine Maouloud!
 
 
 
-##Available projects
+Available projects
 
-### Artificial Intelligence / Data
+Artificial Intelligence / Data
 - CSV data analysis with Python** → cleaning, statistics, visualizations
 - Mini prediction model (linear regression)
 
-### 💻 Web Development
+💻 Web Development
 
-### 🧮 C Language
+🧮 C Language
 
 
 
-## Contact me
+Contact me
 📧 maouloudalamines@outlook.fr  
 💻 (https://github.com/Alaminemd)
