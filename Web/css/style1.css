@@ -1,0 +1,246 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --blue: #0077b5;
+}
+
+body {
+  font-family: sans-serif;
+  overflow: scroll;
+  margin: 0;
+  padding: 0;
+}
+
+header h1 {
+  text-align: left;
+  font-weight: bolder;
+  font-size: 20px;
+  color: blueviolet;
+  margin: 20px 0;
+}
+
+header h1 span {
+  color: white;
+  background-color: darkviolet;
+  border-radius: 5px;
+  padding: 0 5px;
+}
+
+section {
+  max-width: 400px;
+  width: 80vw;
+  min-width: 100px;
+  padding: 40px 50px;
+  margin: 60px auto 25px;
+  box-shadow: 1px 1px 6px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 7px;
+  background: white;
+}
+
+section > h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.5em;
+  font-weight: 600;
+  color: blueviolet;
+}
+
+section > p {
+  font-size: 0.55rem;
+  margin-top: 0;
+  font-weight: 500;
+}
+
+section input {
+  padding: 8px;
+  font-size: 0.7em;
+  width: 100%;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0, 0, 0, 1.0);
+  border-radius: 2px;
+  opacity: 1;
+  transition: 0.3s ease;
+}
+
+section input:focus {
+  outline: none;
+  font-size: 0.9em;
+}
+
+.password {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0, 0, 0, 1.0);
+}
+
+.password input {
+  border: none;
+  padding: 9px;
+  margin: 0;
+  width: 100%;
+}
+
+.password input:focus {
+  outline: none;
+}
+
+.password a {
+  text-decoration: none;
+  font-size: 9px;
+  padding: 10px;
+  color: blueviolet;
+  font-weight: bold;
+}
+
+section a#pwd-change {
+  display: block;
+  color: blueviolet;
+  font-size: 10px;
+  font-weight: bold;
+  text-decoration: none;
+  margin: 9px 0 14px;
+}
+
+button[type="submit"] {
+  padding: 10px;
+  width: 100%;
+  border-radius: 20px;
+  border: none;
+  color: rgba(255, 255, 255);
+  background-color: blueviolet;
+  font-size: 0.7em;
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 1.0);
+  transition: 0.3s ease;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover {
+  background-color: #5d3c8a;
+}
+
+select {
+  padding: 4px;
+  width: 100%;
+  border-radius: 20px;
+  border: none;
+  color: rgba(255, 255, 255);
+  background-color: blueviolet;
+  font-size: 0.7em;
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 1.0);
+  transition: 0.3s ease;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-align: center;
+}
+
+select:hover {
+  background-color: #5d3c8a;
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0px 0px 5px 2px rgba(93, 60, 138, 0.8);
+}
+
+label {
+  font-size: 0.7em; /* Ajustez la taille à votre convenance */
+  color: #333; /* Facultatif : couleur du texte */
+}
+
+
+div.flex {
+  display: flex;
+  align-items: center;
+}
+
+div.flex p {
+  padding: 5px;
+  font-size: 10px;
+}
+
+div.hor-line {
+  height: 1px;
+  width: 44%;
+  background-color: rgba(50, 50, 50, 0.3);
+}
+
+a#apple-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 20px;
+  background-color: #d0b6df;
+  font-size: 0.75em;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.6);
+  box-shadow: 1px 1px 2px 1px rgba(1, 1, 1, 0.6);
+  transition: 0.3s ease;
+  text-align: center;
+  padding: 10px 5px;
+}
+
+a#apple-icon:hover {
+  background-color: rgba(128, 0, 128, 0.1);
+}
+
+main > p {
+  text-align: center;
+  font-size: 10px;
+  font-weight: normal;
+}
+
+main > p a {
+  text-decoration: none;
+  color: blueviolet;
+  transition: 0.3s ease;
+}
+
+main > p a:hover {
+  font-size: 12px;
+}
+footer nav {
+  width: 100%;
+  max-width: 800px; /* Ajustez la largeur maximale si nécessaire */
+  display: flex;
+  font-size: 9px;
+  justify-content: center; /* Centre tout le contenu */
+  gap: 15px; /* Ajoute un espacement uniforme entre les éléments */
+  padding: 5px;
+  margin: 100px auto 20px;
+  flex-wrap: wrap; /* Permet de passer sur plusieurs lignes si la largeur est insuffisante */
+}
+
+footer nav a {
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 10px;
+  text-align: center;
+  padding: 5px;
+}
+
+footer nav a:hover {
+  color: blueviolet;
+  font-weight: bold;
+}
+footer nav a.first span:first-of-type {
+  font-weight: 800;
+}
+
+footer nav a.first span:last-of-type {
+  font-weight: 800;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+p1 {
+  color: red;
+}
