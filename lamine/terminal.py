@@ -4,6 +4,9 @@ python -m venv .venv
 
 python3 -m venv .venv
 source .venv/bin/activate
+cd ~/lamine
+ls -la
+
 ###
 
 mkdir -p scripts data tests lamine/core lamine/domains lamine/app (création des dossiers)
