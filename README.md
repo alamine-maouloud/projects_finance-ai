@@ -9,13 +9,12 @@ Actively looking for a Data/AI internship (from April 2026) in Singapore / Paris
   <a href="#"><img src="https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Pandas-Data-150458?logo=pandas&logoColor=white" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/SQL-Queries-336791?logo=postgresql&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/C-Low%20level-A8B9CC?logo=c&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/HTML%2FCSS-Web-E34F26?logo=html5&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Java-Basics-007396?logo=java&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/PHP-Web-777BB4?logo=php&logoColor=white" /></a>
 </p>
-
----
 
 Featured Projects
 
