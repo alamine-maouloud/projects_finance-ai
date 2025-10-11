@@ -28,3 +28,7 @@ joblib>=1.3
 pytest>=8.0
 TXT
 ###
+
+(streamlit lance le serveur streamlit (framework qui transforme un script pyhton en appli web) 
+streamlit run lamine/app/app.py
+
