@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from database import get_connection, get_site_config
+from validation import (COMPLETENESS_BASIS, SESSION_OPTIONAL_SCORED,
+                        compute_completeness)
 
 EXPORTS_DIR = Path(__file__).parent.parent / "exports"
 
@@ -207,6 +209,12 @@ def export_data(user_id: str,
         session_units = [u for u in units if u["session_id"] == session["session_id"]]
 
         base_row = {k: None for k in fieldnames}
+        # Recompute the completeness score under the CURRENT basis rather than
+        # trusting the value stored at save time (cb_1.0 requirement): an
+        # export is then internally consistent even if the definition moved.
+        session = dict(session)
+        session["l8_completeness_score"] = compute_completeness(
+            session, SESSION_OPTIONAL_SCORED)
         # Infant fields
         for col in infant_cols:
             base_row[col] = infant.get(col)
@@ -242,6 +250,7 @@ def export_data(user_id: str,
     metadata = {
         "schema_version": schema_version,
         "vocabulary_version": vocab_version,
+        "completeness_basis": COMPLETENESS_BASIS,
         "site_id": site_id,
         "export_date": now.isoformat(),
         "record_count": len(rows),

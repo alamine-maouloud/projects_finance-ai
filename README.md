@@ -28,6 +28,10 @@ source .venv/bin/activate   # macOS/Linux
 # 4. Install dependencies
 pip install -r requirements.txt
 
+# To run the test suite:
+pip install -r requirements-dev.txt
+python -m pytest tests/ -q
+
 # 5. Launch
 streamlit run app/main.py
 ```

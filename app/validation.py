@@ -2,7 +2,7 @@
 WP2 Platform - Validation engine v1.1
 Three check classes per Build Specification v1.1:
   1. Conformance  - required fields, ranges, formats
-  2. Completeness - score 0-100% (only fields with inputs count)
+  2. Completeness - cb_1.0 optional-field coverage (see COMPLETENESS_BASIS)
   3. Plausibility - cross-field logic
 
 IMPORTANT: boolean fields are now stored as 'Yes'/'No'/None (not 0/1).
@@ -20,7 +20,7 @@ INFANT_OPTIONAL_SCORED = [
     "l1_ethnicity", "l1_antenatal_corticosteroids", "l1_surfactant",
     "l1_brain_injury_ivh", "l1_brain_injury_pvl", "l1_cld_bpd",
     "l1_sepsis_confirmed", "l1_rop_result", "l1_hearing_result",
-    # Discharge fields only counted once edit function exists
+    # Discharge group: applicable only once discharge documentation begins
     "l1_discharge_los", "l1_weight_discharge_g", "l1_feeding_status_discharge",
 ]
 
@@ -65,44 +65,121 @@ def _is_present(val) -> bool:
     return True
 
 
-# Required fields per record type — always included in completeness score
-INFANT_REQUIRED_SCORED = [
-    "l1_gestational_age_weeks",
-    "l1_gestational_age_days",
-    "l1_birth_weight_g",
-]
+# ── Completeness basis cb_1.0 (PI definition, September 2026) ────────────────
+#
+# Score on the record  = optional-field COVERAGE:
+#       recorded / (recorded + not_recorded)   over optional fields only.
+# Required fields are excluded: validation blocks any record missing one, so
+# they are always present and would add the same constant to every record.
+#
+# Every field is in exactly one of three states:
+#   "recorded"       - a value is present (0, "No", "None" are VALUES)
+#   "not_recorded"   - the field applies here and was left blank
+#   "not_applicable" - the field cannot hold a value for this record;
+#                      it leaves BOTH numerator and denominator.
+#
+# Applicability rules (a field counts only when it applies):
+#   discharge group (l1_discharge_los, l1_weight_discharge_g,
+#     l1_feeding_status_discharge)  -> at least one of the three is recorded
+#   l1_ethnicity_scheme             -> l1_ethnicity is recorded
+#   l7_eeg_quality_flag (session)   -> l7_eeg_recording_linked == "Yes"
+#   l7_eeg_marker_timestamps (unit) -> parent session has an EEG recording
+#                                      linked (pass eeg_linked=True/False)
+#   l3music_spl_at_incubator (unit) -> the intervention is a music
+#                                      intervention (pass intervention_type)
+#   everything else                 -> always applicable
+COMPLETENESS_BASIS = "cb_1.0"
 
-SESSION_REQUIRED_SCORED = [
-    "l2_session_datetime",
-    "l2_session_number",
-    "l2_clinician_id",
-    "l2_intervention_type",
-    "l2_protocol_id",
-    "l2_protocol_version",
-    "l5_overall_outcome",
-    "l5_adverse_event",
-]
+DISCHARGE_GROUP = ("l1_discharge_los", "l1_weight_discharge_g",
+                   "l1_feeding_status_discharge")
 
-UNIT_REQUIRED_SCORED = [
-    "l3_unit_condition",
-    "l3_unit_duration",
-]
+# kept for backward compatibility with older tests / callers
+INFANT_REQUIRED_SCORED  = ["l1_gestational_age_weeks", "l1_gestational_age_days",
+                           "l1_birth_weight_g"]
+SESSION_REQUIRED_SCORED = ["l2_session_datetime", "l2_session_number",
+                           "l2_clinician_id", "l2_intervention_type",
+                           "l2_protocol_id", "l2_protocol_version",
+                           "l5_overall_outcome", "l5_adverse_event"]
+UNIT_REQUIRED_SCORED    = ["l3_unit_condition", "l3_unit_duration"]
+
+
+def _is_music(intervention_type) -> bool:
+    return isinstance(intervention_type, str) and "MUSIC" in intervention_type.upper()
+
+
+def field_applies(field: str, record: dict, *,
+                  intervention_type=None, eeg_linked=None) -> bool:
+    """Return True when `field` is applicable to this record (cb_1.0 rules)."""
+    if field in DISCHARGE_GROUP:
+        return any(_is_present(record.get(f)) for f in DISCHARGE_GROUP)
+    if field == "l1_ethnicity_scheme":
+        return _is_present(record.get("l1_ethnicity"))
+    if field == "l7_eeg_quality_flag":
+        return record.get("l7_eeg_recording_linked") == "Yes"
+    if field == "l7_eeg_marker_timestamps":
+        if eeg_linked is not None:
+            return bool(eeg_linked)
+        return record.get("l7_eeg_recording_linked") == "Yes"
+    if field == "l3music_spl_at_incubator":
+        itype = intervention_type if intervention_type is not None \
+                else record.get("l2_intervention_type")
+        return _is_music(itype)
+    return True
+
+
+def field_state(field: str, record: dict, **ctx) -> str:
+    """'recorded' | 'not_recorded' | 'not_applicable' for one field."""
+    if not field_applies(field, record, **ctx):
+        return "not_applicable"
+    return "recorded" if _is_present(record.get(field)) else "not_recorded"
+
+
+def completeness_breakdown(record: dict, optional_fields: list[str], **ctx) -> dict:
+    """Counts per state over the optional fields of one record."""
+    states = {"recorded": 0, "not_recorded": 0, "not_applicable": 0}
+    for f in optional_fields:
+        states[field_state(f, record, **ctx)] += 1
+    return states
 
 
 def compute_completeness(record: dict,
                          optional_fields: list[str],
-                         required_fields: list[str] | None = None) -> float:
+                         required_fields: list[str] | None = None,
+                         **ctx) -> float:
     """
-    Score 0-100% across all fields with a UI input.
-    Required fields always contribute — a record with only required fields
-    filled scores required_count / total_count * 100, not 0%.
+    cb_1.0 optional-field coverage, 0-100.
+    `required_fields` is accepted and IGNORED (kept for call compatibility).
+    ctx: intervention_type=..., eeg_linked=... for unit records.
     """
-    req = required_fields or []
-    all_fields = req + optional_fields
-    if not all_fields:
-        return 100.0
-    filled = sum(1 for f in all_fields if _is_present(record.get(f)))
-    return round(filled / len(all_fields) * 100, 1)
+    b = completeness_breakdown(record, optional_fields, **ctx)
+    applicable = b["recorded"] + b["not_recorded"]
+    if applicable == 0:
+        return 100.0     # nothing applicable -> nothing missing
+    return round(b["recorded"] / applicable * 100, 1)
+
+
+def field_missingness(records: list[dict], fields: list[str],
+                      ctx_fn=None) -> list[dict]:
+    """
+    Per-field missingness across a cohort (analytics output, not stored):
+      not_recorded / applicable, as %, always with N applicable.
+    ctx_fn(record) may return a dict of ctx kwargs (e.g. intervention_type).
+    """
+    out = []
+    for f in fields:
+        n_app = n_missing = 0
+        for r in records:
+            ctx = ctx_fn(r) if ctx_fn else {}
+            st = field_state(f, r, **ctx)
+            if st == "not_applicable":
+                continue
+            n_app += 1
+            if st == "not_recorded":
+                n_missing += 1
+        pct = round(n_missing / n_app * 100, 1) if n_app else None
+        out.append({"field": f, "n_applicable": n_app,
+                    "n_missing": n_missing, "pct_missing": pct})
+    return out
 
 
 def validate_clinician_id(clinician_id: str) -> tuple[bool, str]:
@@ -150,7 +227,7 @@ def validate_infant(record: dict) -> tuple[bool, list[str], float]:
         except (ValueError, TypeError):
             issues.append("TYPE: l1_birth_weight_g must be numeric")
 
-    score = compute_completeness(record, INFANT_OPTIONAL_SCORED, INFANT_REQUIRED_SCORED)
+    score = compute_completeness(record, INFANT_OPTIONAL_SCORED)
     conformance_passed = not any(
         i.startswith("REQUIRED") or i.startswith("RANGE") or i.startswith("TYPE")
         for i in issues
@@ -208,7 +285,7 @@ def validate_session(record: dict) -> tuple[bool, list[str], float]:
     if adverse == "Yes" and outcome == "OUT_COMPLETE":
         issues.append("PLAUSIBILITY: adverse event flagged but outcome is Complete - please confirm")
 
-    score = compute_completeness(record, SESSION_OPTIONAL_SCORED, SESSION_REQUIRED_SCORED)
+    score = compute_completeness(record, SESSION_OPTIONAL_SCORED)
     conformance_passed = not any(
         i.startswith("REQUIRED") or i.startswith("RANGE") or
         i.startswith("TYPE") or i.startswith("LENGTH") or i.startswith("FORMAT")
@@ -218,7 +295,8 @@ def validate_session(record: dict) -> tuple[bool, list[str], float]:
 
 
 def validate_unit(record: dict,
-                  intervention_type: str = "ITYPE_MUSIC") -> tuple[bool, list[str], float]:
+                  intervention_type: str = "ITYPE_MUSIC",
+                  eeg_linked: bool | None = None) -> tuple[bool, list[str], float]:
     issues = []
 
     for field in ["l3_unit_condition", "l3_unit_duration"]:
@@ -254,7 +332,9 @@ def validate_unit(record: dict,
             except (ValueError, TypeError):
                 pass
 
-    score = compute_completeness(record, UNIT_OPTIONAL_SCORED, UNIT_REQUIRED_SCORED)
+    score = compute_completeness(record, UNIT_OPTIONAL_SCORED,
+                                 intervention_type=intervention_type,
+                                 eeg_linked=eeg_linked)
     conformance_passed = not any(
         i.startswith("REQUIRED") or i.startswith("RANGE") or i.startswith("TYPE")
         for i in issues

@@ -5,6 +5,7 @@ Run: streamlit run app/main.py
 """
 
 import streamlit as st
+import pandas as pd
 import sys
 import secrets
 from pathlib import Path
@@ -16,10 +17,21 @@ from database import (get_connection, get_site_config, init_db,
                       log_data_audit, SCHEMA_VERSION, VOC_VERSION)
 from vocabulary import (selectbox_options, label_to_code, code_to_label,
                         get_version, active_intervention_types, get_labels)
-from validation import validate_infant, validate_session, validate_unit
+from validation import (validate_infant, validate_session, validate_unit,
+                        completeness_breakdown, field_missingness,
+                        INFANT_OPTIONAL_SCORED, SESSION_OPTIONAL_SCORED,
+                        UNIT_OPTIONAL_SCORED, COMPLETENESS_BASIS)
 from export_module import export_data
 
-APP_VERSION = "1.1.1"
+APP_VERSION = "1.1.2"
+
+
+def _cov_txt(record: dict, fields: list, **ctx) -> str:
+    """'x/y applicable optional fields (n not applicable)' for save messages."""
+    b = completeness_breakdown(record, fields, **ctx)
+    n_app = b["recorded"] + b["not_recorded"]
+    na = f", {b['not_applicable']} not applicable" if b["not_applicable"] else ""
+    return f"{b['recorded']}/{n_app} applicable optional fields{na}"
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -32,8 +44,8 @@ st.set_page_config(
 
 # ── Site init ─────────────────────────────────────────────────────────────────
 def ensure_site_init():
-    db_path = Path(__file__).parent.parent / "data" / "wp2_platform.db"
-    if not db_path.exists():
+    from database import DB_PATH
+    if not DB_PATH.exists():
         st.title("WP2 Platform - Site Setup")
         st.info("First run: configure your site identifier.")
         with st.form("site_setup"):
@@ -465,92 +477,92 @@ def tab_infants():
                         st.session_state["pending_infant_needs_dup_check"] = True
                         st.rerun()
 
-            # ── Post-form duplicate check (OUTSIDE st.form — Streamlit compatible) ──
-            if st.session_state.get("pending_infant_needs_dup_check"):
-                record = st.session_state.get("pending_infant_record", {})
-                score  = st.session_state.get("pending_infant_score", 0)
+        # ── Post-form duplicate check (OUTSIDE st.form, Streamlit compatible) ──
+        if st.session_state.get("pending_infant_needs_dup_check"):
+            record = st.session_state.get("pending_infant_record", {})
+            score  = st.session_state.get("pending_infant_score", 0)
 
-                conn = get_connection()
-                dup = conn.execute(
-                    "SELECT l1_infant_id FROM infants WHERE "
-                    "l1_gestational_age_weeks = ? AND l1_gestational_age_days = ? "
-                    "AND l1_birth_weight_g = ? AND is_void = 0",
-                    (record["l1_gestational_age_weeks"],
-                     record["l1_gestational_age_days"],
-                     record["l1_birth_weight_g"])
-                ).fetchone()
-                conn.close()
+            conn = get_connection()
+            dup = conn.execute(
+                "SELECT l1_infant_id FROM infants WHERE "
+                "l1_gestational_age_weeks = ? AND l1_gestational_age_days = ? "
+                "AND l1_birth_weight_g = ? AND is_void = 0",
+                (record["l1_gestational_age_weeks"],
+                 record["l1_gestational_age_days"],
+                 record["l1_birth_weight_g"])
+            ).fetchone()
+            conn.close()
 
-                if dup and not st.session_state.get("confirm_duplicate"):
-                    st.warning(
-                        f"⚠️ A record with the same GA and birth weight already exists "
-                        f"({dup['l1_infant_id']}). "
-                        "Twins share the same GA and birth weight — confirm to save anyway."
-                    )
-                    c_yes, c_no = st.columns(2)
-                    if c_yes.button("✅ Confirm save", key="confirm_dup_btn", type="primary"):
-                        st.session_state["confirm_duplicate"] = True
-                        st.rerun()
-                    if c_no.button("❌ Cancel", key="cancel_dup_btn"):
-                        for k in ["pending_infant_record", "pending_infant_score",
-                                  "pending_infant_needs_dup_check", "confirm_duplicate"]:
-                            st.session_state.pop(k, None)
-                        st.rerun()
-                    st.stop()
-
-                # Clear check flags
-                for k in ["pending_infant_needs_dup_check", "confirm_duplicate"]:
-                    st.session_state.pop(k, None)
-
-                conn = get_connection()
-                conn.execute("""
-                    INSERT INTO infants (
-                        l1_infant_id, l1_gestational_age_weeks, l1_gestational_age_days,
-                        l1_birth_weight_g, l1_sex, l1_primary_diagnosis,
-                        l1_birth_length_cm, l1_birth_hc_cm,
-                        l1_ethnicity, l1_ethnicity_scheme,
-                        l1_antenatal_corticosteroids, l1_surfactant,
-                        l1_brain_injury_ivh, l1_brain_injury_pvl,
-                        l1_cld_bpd, l1_sepsis_confirmed,
-                        l1_rop_result, l1_hearing_result,
-                        l8_site_id, l8_schema_version, l8_vocabulary_version,
-                        l8_created_by, l8_record_creation_timestamp
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """, (
-                    record["l1_infant_id"],
-                    record["l1_gestational_age_weeks"],
-                    record["l1_gestational_age_days"],
-                    record["l1_birth_weight_g"],
-                    record["l1_sex"], record["l1_primary_diagnosis"],
-                    record["l1_birth_length_cm"], record["l1_birth_hc_cm"],
-                    record["l1_ethnicity"], record["l1_ethnicity_scheme"],
-                    record["l1_antenatal_corticosteroids"], record["l1_surfactant"],
-                    record["l1_brain_injury_ivh"], record["l1_brain_injury_pvl"],
-                    record["l1_cld_bpd"], record["l1_sepsis_confirmed"],
-                    record["l1_rop_result"], record["l1_hearing_result"],
-                    SITE_ID, SCHEMA_VERSION, VOC_VERSION,
-                    st.session_state["user_id"], now_iso()
-                ))
-                conn.commit()
-                conn.close()
-                new_id = record["l1_infant_id"]
-                log_data_audit(st.session_state["user_id"], "infant_created", new_id, new_id)
-
-                st.session_state["active_infant_id"] = new_id
-                st.session_state["active_infant_label"] = (
-                    f"{new_id} ({record['l1_gestational_age_weeks']}+"
-                    f"{record['l1_gestational_age_days']}wk, "
-                    f"{record['l1_birth_weight_g']}g)"
+            if dup and not st.session_state.get("confirm_duplicate"):
+                st.warning(
+                    f"⚠️ A record with the same GA and birth weight already exists "
+                    f"({dup['l1_infant_id']}). "
+                    "Twins share the same GA and birth weight. Confirm to save anyway."
                 )
-                st.session_state["last_save_msg"] = (
-                    f"✅ Infant {new_id} saved. "
-                    f"Completeness: {score}% "
-                    f"({int(round(score * 19 / 100))}/19 fields filled)"
-                    + (" - consider completing optional fields." if score < 60 else "")
-                )
-                for k in ["pending_infant_record", "pending_infant_score"]:
-                    st.session_state.pop(k, None)
-                st.rerun()
+                c_yes, c_no = st.columns(2)
+                if c_yes.button("✅ Confirm save", key="confirm_dup_btn", type="primary"):
+                    st.session_state["confirm_duplicate"] = True
+                    st.rerun()
+                if c_no.button("❌ Cancel", key="cancel_dup_btn"):
+                    for k in ["pending_infant_record", "pending_infant_score",
+                              "pending_infant_needs_dup_check", "confirm_duplicate"]:
+                        st.session_state.pop(k, None)
+                    st.rerun()
+                st.stop()
+
+            # Clear check flags
+            for k in ["pending_infant_needs_dup_check", "confirm_duplicate"]:
+                st.session_state.pop(k, None)
+
+            conn = get_connection()
+            conn.execute("""
+                INSERT INTO infants (
+                    l1_infant_id, l1_gestational_age_weeks, l1_gestational_age_days,
+                    l1_birth_weight_g, l1_sex, l1_primary_diagnosis,
+                    l1_birth_length_cm, l1_birth_hc_cm,
+                    l1_ethnicity, l1_ethnicity_scheme,
+                    l1_antenatal_corticosteroids, l1_surfactant,
+                    l1_brain_injury_ivh, l1_brain_injury_pvl,
+                    l1_cld_bpd, l1_sepsis_confirmed,
+                    l1_rop_result, l1_hearing_result,
+                    l8_site_id, l8_schema_version, l8_vocabulary_version,
+                    l8_created_by, l8_record_creation_timestamp
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """, (
+                record["l1_infant_id"],
+                record["l1_gestational_age_weeks"],
+                record["l1_gestational_age_days"],
+                record["l1_birth_weight_g"],
+                record["l1_sex"], record["l1_primary_diagnosis"],
+                record["l1_birth_length_cm"], record["l1_birth_hc_cm"],
+                record["l1_ethnicity"], record["l1_ethnicity_scheme"],
+                record["l1_antenatal_corticosteroids"], record["l1_surfactant"],
+                record["l1_brain_injury_ivh"], record["l1_brain_injury_pvl"],
+                record["l1_cld_bpd"], record["l1_sepsis_confirmed"],
+                record["l1_rop_result"], record["l1_hearing_result"],
+                SITE_ID, SCHEMA_VERSION, VOC_VERSION,
+                st.session_state["user_id"], now_iso()
+            ))
+            conn.commit()
+            conn.close()
+            new_id = record["l1_infant_id"]
+            log_data_audit(st.session_state["user_id"], "infant_created", new_id, new_id)
+
+            st.session_state["active_infant_id"] = new_id
+            st.session_state["active_infant_label"] = (
+                f"{new_id} ({record['l1_gestational_age_weeks']}+"
+                f"{record['l1_gestational_age_days']}wk, "
+                f"{record['l1_birth_weight_g']}g)"
+            )
+            st.session_state["last_save_msg"] = (
+                f"✅ Infant {new_id} saved. "
+                f"Optional-field coverage: {score}% "
+                f"({_cov_txt(record, INFANT_OPTIONAL_SCORED)})"
+                + (" - consider completing optional fields." if score < 60 else "")
+            )
+            for k in ["pending_infant_record", "pending_infant_score"]:
+                st.session_state.pop(k, None)
+            st.rerun()
 
     # Show persisted success message
     if "last_save_msg" in st.session_state:
@@ -798,12 +810,14 @@ def tab_sessions():
             )
 
             c1, c2 = st.columns(2)
-            # Only active intervention types (item 19)
+            # Only active intervention types (item 19).
+            # Required fields start blank so that a value is consciously chosen
+            # rather than silently accepted (same rule as the infant form).
             active_types = active_intervention_types()
-            itype_label  = c1.selectbox("Intervention type *", active_types)
-            itype_code   = label_to_code("l2_intervention_type", itype_label)
-            protocol_id  = c2.text_input("Protocol ID *", value="MUSIC_V1")
-            protocol_ver = st.text_input("Protocol version *", value="1.0")
+            itype_label  = c1.selectbox("Intervention type *", [""] + active_types)
+            itype_code   = label_to_code("l2_intervention_type", itype_label) if itype_label else None
+            protocol_id  = c2.text_input("Protocol ID *", placeholder="e.g. MUSIC_V1")
+            protocol_ver = st.text_input("Protocol version *", placeholder="e.g. 1.0")
 
             st.divider()
             st.markdown("**Layer 2 - Clinical context (Optional)**")
@@ -986,7 +1000,8 @@ def tab_sessions():
                         st.warning(w)
 
                     st.session_state["last_save_msg"] = (
-                        f"✅ Session {sess_id} saved. Completeness: {score}%"
+                        f"✅ Session {sess_id} saved. Optional-field coverage: {score}% "
+                        f"({_cov_txt(record, SESSION_OPTIONAL_SCORED)})"
                     )
                     st.rerun()
 
@@ -1019,7 +1034,8 @@ def tab_units():
 
     conn = get_connection()
     sessions = conn.execute(
-        "SELECT session_id, l2_session_number, l2_session_datetime, l2_intervention_type "
+        "SELECT session_id, l2_session_number, l2_session_datetime, l2_intervention_type, "
+        "l7_eeg_recording_linked "
         "FROM sessions WHERE l1_infant_id = ? AND is_void = 0 ORDER BY l2_session_number",
         (selected_infant,)
     ).fetchall()
@@ -1163,7 +1179,9 @@ def tab_units():
                 }
 
                 passed, issues, score = validate_unit(
-                    record, intervention_type=selected_sess["l2_intervention_type"]
+                    record,
+                    intervention_type=selected_sess["l2_intervention_type"],
+                    eeg_linked=(selected_sess["l7_eeg_recording_linked"] == "Yes"),
                 )
 
                 if not passed:
@@ -1231,7 +1249,8 @@ def tab_analytics():
 
     try:
         import duckdb
-        db_path = str(Path(__file__).parent.parent / "data" / "wp2_platform.db")
+        from database import DB_PATH
+        db_path = str(DB_PATH)
         dc = duckdb.connect(":memory:")
         dc.execute(f"ATTACH '{db_path}' AS wp2 (TYPE SQLITE, READ_ONLY TRUE)")
 
@@ -1251,6 +1270,54 @@ def tab_analytics():
             ).fetchdf()
             if not scores.empty:
                 st.bar_chart(scores)
+
+            # ── Per-field missingness (cb_1.0) ────────────────────────────
+            # not_recorded / applicable, per field, across the cohort.
+            # Always shown with N applicable: 40 % of 5 and 40 % of 500 are
+            # not the same fact.
+            st.subheader("Per-field missingness")
+            st.caption(f"Basis {COMPLETENESS_BASIS} - % of applicable records "
+                       "in which the field was left blank. Not-applicable "
+                       "records are excluded from N.")
+            infants_df  = dc.execute("SELECT * FROM wp2.infants WHERE is_void=0").fetchdf()
+            sessions_df = dc.execute("SELECT * FROM wp2.sessions WHERE is_void=0").fetchdf()
+            units_df    = dc.execute(
+                "SELECT u.*, s.l2_intervention_type, s.l7_eeg_recording_linked "
+                "FROM wp2.intervention_units u "
+                "JOIN wp2.sessions s ON s.session_id = u.session_id "
+                "WHERE s.is_void=0").fetchdf()
+
+            def _recs(df):
+                return [{k: (None if pd.isna(v) else v) for k, v in r.items()}
+                        for r in df.to_dict("records")]
+
+            def _unit_ctx(r):
+                return {"intervention_type": r.get("l2_intervention_type"),
+                        "eeg_linked": r.get("l7_eeg_recording_linked") == "Yes"}
+
+            def _miss_table(rows):
+                t = pd.DataFrame(rows)
+                t["% missing"] = t["pct_missing"].map(
+                    lambda v: "n/a" if v is None else f"{v:.1f} %")
+                t = t.rename(columns={"field": "Field",
+                                      "n_applicable": "N applicable",
+                                      "n_missing": "N missing"})
+                return t[["Field", "N applicable", "N missing", "% missing"]]
+
+            tab_i, tab_s, tab_u = st.tabs(["Infant fields", "Session fields",
+                                           "Unit fields"])
+            with tab_i:
+                st.dataframe(_miss_table(field_missingness(
+                    _recs(infants_df), INFANT_OPTIONAL_SCORED)),
+                    use_container_width=True, hide_index=True)
+            with tab_s:
+                st.dataframe(_miss_table(field_missingness(
+                    _recs(sessions_df), SESSION_OPTIONAL_SCORED)),
+                    use_container_width=True, hide_index=True)
+            with tab_u:
+                st.dataframe(_miss_table(field_missingness(
+                    _recs(units_df), UNIT_OPTIONAL_SCORED, ctx_fn=_unit_ctx)),
+                    use_container_width=True, hide_index=True)
 
             st.subheader("Outcome distribution")
             outcomes = dc.execute(

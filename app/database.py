@@ -11,7 +11,12 @@ from pathlib import Path
 
 SCHEMA_VERSION = "1.1"
 VOC_VERSION = "1.1.0"
-DB_PATH = Path(__file__).parent.parent / "data" / "wp2_platform.db"
+# Database location. Override with WP2_DB_PATH so that the clinical data can live
+# outside the application bundle (hospital deployment) and so that tests can use
+# a throw-away database.
+import os
+DB_PATH = Path(os.environ.get("WP2_DB_PATH",
+                              Path(__file__).parent.parent / "data" / "wp2_platform.db"))
 
 
 def get_connection() -> sqlite3.Connection:

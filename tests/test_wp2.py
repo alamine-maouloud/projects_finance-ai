@@ -648,11 +648,12 @@ def test_audit_is_append_only():
 
 
 
-# ── 5. UI TESTS ──────────────────────────────────────────────────────────────
-def test_ui_duplicate_warning_no_crash():
+# ── 5. DUPLICATE QUERY + COMPLETENESS (logic-level) ──────────────────────────────────────────────────────────────
+def test_duplicate_query_finds_matching_ga_and_weight():
     """
-    Duplicate detection must work without crashing.
-    Twin scenario: two infants with same GA + birth weight.
+    Logic-level only: the SQL used for duplicate detection finds an existing
+    infant with the same GA and birth weight. This does NOT exercise the
+    Streamlit page; the UI path is covered by tests/test_ui_apptest.py.
     """
     import tempfile, os
     from pathlib import Path
@@ -685,7 +686,7 @@ def test_ui_duplicate_warning_no_crash():
         conn.close()
 
         assert dup is not None, "FAIL: duplicate not detected"
-        print("✅ Duplicate detection works — twin scenario handled correctly")
+        print("✅ Duplicate detection works, twin scenario handled correctly")
 
     finally:
         db_mod.DB_PATH = orig_path
@@ -693,11 +694,12 @@ def test_ui_duplicate_warning_no_crash():
         except Exception: pass
 
 
-def test_ui_completeness_includes_required_fields():
+def test_completeness_required_only_record():
     """
-    Required fields must contribute to completeness score.
-    An infant with only required fields must NOT score 0%.
-    Efthymios: "required fields do not appear to contribute" — now fixed.
+    cb_1.0: score = optional-field coverage. Required fields are excluded.
+    An infant with only required fields therefore scores 0% - a valid record
+    that carries no optional detail. Discharge fields are not applicable to
+    an admitted infant, so the denominator is 13, not 16.
     """
     from validation import validate_infant
 
@@ -709,13 +711,15 @@ def test_ui_completeness_includes_required_fields():
     }
     passed, issues, score = validate_infant(record)
     assert passed, f"FAIL: valid record rejected: {issues}"
-    assert score > 0, f"FAIL: score is {score}% — required fields must contribute"
-    assert 10 <= score <= 25, f"FAIL: expected ~15.8% (3/19 fields), got {score}%"
-    print(f"✅ Completeness with required fields only: {score}% (expected ~15.8%)")
+    assert score == 0.0, f"FAIL: expected 0.0% under cb_1.0, got {score}%"
+    from validation import completeness_breakdown, INFANT_OPTIONAL_SCORED
+    b = completeness_breakdown(record, INFANT_OPTIONAL_SCORED)
+    assert b == {"recorded": 0, "not_recorded": 13, "not_applicable": 3}, b
+    print(f"✅ cb_1.0 required-only infant: {score}% (0/13 applicable, 3 N/A)")
 
 
-def test_ui_completeness_full_record():
-    """Full record must score 100%."""
+def test_completeness_full_record():
+    """Fully documented, discharged infant must score 100% (16/16)."""
     from validation import validate_infant
 
     record = {
@@ -747,6 +751,73 @@ def test_ui_completeness_full_record():
 
 
 
+# ── 6. COMPLETENESS BASIS cb_1.0 ─────────────────────────────────────────────
+def test_cb10_discharge_group_not_applicable_until_documented():
+    """Admitted infant: 3 discharge fields leave numerator AND denominator."""
+    from validation import completeness_breakdown, INFANT_OPTIONAL_SCORED
+    rec = {"l1_sex": "SEX_MALE"}
+    b = completeness_breakdown(rec, INFANT_OPTIONAL_SCORED)
+    assert b["not_applicable"] == 3
+    rec["l1_discharge_los"] = 0          # documentation begins (zero is a value)
+    b = completeness_breakdown(rec, INFANT_OPTIONAL_SCORED)
+    assert b["not_applicable"] == 0 and b["recorded"] == 2, b
+    print("✅ cb_1.0 discharge group applies only once documented; LOS=0 counts")
+
+
+def test_cb10_zero_and_no_are_recorded_values():
+    """0, 'No' and 'None' must count as recorded."""
+    from validation import field_state
+    assert field_state("l6_parental_anxiety", {"l6_parental_anxiety": 0}) == "recorded"
+    assert field_state("l2_skin_to_skin", {"l2_skin_to_skin": "No"}) == "recorded"
+    assert field_state("l1_brain_injury_ivh", {"l1_brain_injury_ivh": "IVH_NONE"}) == "recorded"
+    assert field_state("l6_parental_anxiety", {}) == "not_recorded"
+    print("✅ cb_1.0 zero / No / None are recorded values")
+
+
+def test_cb10_spl_not_applicable_for_non_music():
+    """SPL at incubator never counts against a non-music protocol."""
+    from validation import validate_unit
+    unit = {"l3_unit_condition": "C", "l3_unit_duration": 300}
+    _, _, s_music = validate_unit(unit, "ITYPE_MUSIC", eeg_linked=False)
+    _, _, s_other = validate_unit(unit, "ITYPE_KANGAROO", eeg_linked=False)
+    assert s_music == 0.0 and s_other == 0.0
+    from validation import completeness_breakdown, UNIT_OPTIONAL_SCORED
+    b = completeness_breakdown(unit, UNIT_OPTIONAL_SCORED,
+                               intervention_type="ITYPE_KANGAROO", eeg_linked=False)
+    assert b["not_applicable"] == 2   # SPL + EEG marker timestamps
+    print("✅ cb_1.0 SPL and EEG markers not applicable when they cannot apply")
+
+
+def test_cb10_eeg_quality_flag_follows_eeg_linked():
+    from validation import field_state
+    assert field_state("l7_eeg_quality_flag", {"l7_eeg_recording_linked": "No"}) == "not_applicable"
+    assert field_state("l7_eeg_quality_flag", {"l7_eeg_recording_linked": "Yes"}) == "not_recorded"
+    print("✅ cb_1.0 EEG quality flag applies only when a recording is linked")
+
+
+def test_cb10_field_missingness_reports_n_applicable():
+    """Per-field missingness = not_recorded / applicable, with N."""
+    from validation import field_missingness
+    recs = [{"l7_eeg_recording_linked": "Yes"},
+            {"l7_eeg_recording_linked": "Yes", "l7_eeg_quality_flag": "GOOD"},
+            {"l7_eeg_recording_linked": "No"}]
+    row = field_missingness(recs, ["l7_eeg_quality_flag"])[0]
+    assert row == {"field": "l7_eeg_quality_flag", "n_applicable": 2,
+                   "n_missing": 1, "pct_missing": 50.0}, row
+    print("✅ cb_1.0 per-field missingness carries N applicable")
+
+
+def test_export_metadata_has_completeness_basis():
+    """Export metadata must stamp completeness_basis next to schema/vocab."""
+    import re, inspect
+    import export_module
+    src = inspect.getsource(export_module)
+    assert '"completeness_basis": COMPLETENESS_BASIS' in src
+    from validation import COMPLETENESS_BASIS
+    assert COMPLETENESS_BASIS == "cb_1.0"
+    print("✅ export metadata stamps completeness_basis cb_1.0")
+
+
 # ── RUNNER ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     tests = [
@@ -770,9 +841,15 @@ if __name__ == "__main__":
         test_export_round_trip,
         test_vocabulary_loads_v110,
         test_future_types_excluded_from_active,
-        test_ui_duplicate_warning_no_crash,
-        test_ui_completeness_includes_required_fields,
-        test_ui_completeness_full_record,
+        test_duplicate_query_finds_matching_ga_and_weight,
+        test_completeness_required_only_record,
+        test_completeness_full_record,
+        test_cb10_discharge_group_not_applicable_until_documented,
+        test_cb10_zero_and_no_are_recorded_values,
+        test_cb10_spl_not_applicable_for_non_music,
+        test_cb10_eeg_quality_flag_follows_eeg_linked,
+        test_cb10_field_missingness_reports_n_applicable,
+        test_export_metadata_has_completeness_basis,
     ]
 
     passed = 0
