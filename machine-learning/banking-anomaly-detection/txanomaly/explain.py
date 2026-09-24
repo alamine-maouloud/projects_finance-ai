@@ -60,8 +60,12 @@ def _text(family: str, r) -> str:
             txt += f"; 24-hour spend {r.amount_24h_ratio:.0f}x the usual payment"
         return txt
     if family == "card_testing":
-        return (f"{_n(r.n_small_10min, 'payment')} under EUR 5 in the previous 10 minutes, "
-                f"{_n(r.n_new_merchant_1h, 'new merchant')} in the hour")
+        parts = []
+        if r.n_small_10min > 0:
+            parts.append(f"{_n(r.n_small_10min, 'payment')} under EUR 5 in the previous 10 minutes")
+        if r.n_new_merchant_1h > 0:
+            parts.append(f"{_n(r.n_new_merchant_1h, 'new merchant')} in the previous hour")
+        return ", ".join(parts) or "burst of payments at new merchants"
     if family == "new_merchant":
         return "first payment at this merchant"
     if family == "new_device":
