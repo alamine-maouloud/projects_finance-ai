@@ -18,7 +18,8 @@ else:
     setup(
         ext_modules=[Pybind11Extension(
             "mcrisk._native",
-            ["cpp/src/credit_kernel.cpp", "cpp/src/bindings.cpp"],
+            ["cpp/src/credit_kernel.cpp", "cpp/src/order_book.cpp", "cpp/src/lob_sim.cpp",
+             "cpp/src/bindings.cpp"],
             include_dirs=["cpp/src"],
             cxx_std=17,
             extra_compile_args=["-O3"],
