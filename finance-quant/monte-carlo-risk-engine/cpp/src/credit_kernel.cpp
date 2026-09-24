@@ -1,93 +1,12 @@
 #include "credit_kernel.hpp"
+#include "util.hpp"
 
 #include <algorithm>
-#include <atomic>
 #include <cmath>
 #include <numeric>
 #include <stdexcept>
-#include <thread>
 
 namespace mcrisk {
-namespace {
-
-// ---------------------------------------------------------------- RNG ------
-inline std::uint64_t splitmix64(std::uint64_t& x) {
-    std::uint64_t z = (x += 0x9e3779b97f4a7c15ULL);
-    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
-    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
-    return z ^ (z >> 31);
-}
-
-// xoshiro256** (Blackman & Vigna), one independent stream per chunk
-class Rng {
-  public:
-    explicit Rng(std::uint64_t seed) {
-        for (auto& v : s_) v = splitmix64(seed);
-    }
-    std::uint64_t next() {
-        const std::uint64_t r = rotl(s_[1] * 5, 7) * 9;
-        const std::uint64_t t = s_[1] << 17;
-        s_[2] ^= s_[0]; s_[3] ^= s_[1]; s_[1] ^= s_[2]; s_[0] ^= s_[3];
-        s_[2] ^= t;
-        s_[3] = rotl(s_[3], 45);
-        return r;
-    }
-    // uniform on (0, 1]
-    double uniform() { return static_cast<double>((next() >> 11) + 1) * 0x1.0p-53; }
-    // Marsaglia polar method
-    double normal() {
-        if (has_spare_) { has_spare_ = false; return spare_; }
-        double u, v, q;
-        do {
-            u = 2.0 * uniform() - 1.0;
-            v = 2.0 * uniform() - 1.0;
-            q = u * u + v * v;
-        } while (q >= 1.0 || q == 0.0);
-        const double m = std::sqrt(-2.0 * std::log(q) / q);
-        spare_ = v * m;
-        has_spare_ = true;
-        return u * m;
-    }
-    // Gamma(shape, 1), Marsaglia & Tsang (2000)
-    double gamma(double shape) {
-        if (shape < 1.0) return gamma(shape + 1.0) * std::pow(uniform(), 1.0 / shape);
-        const double d = shape - 1.0 / 3.0, c = 1.0 / std::sqrt(9.0 * d);
-        for (;;) {
-            double x, v;
-            do { x = normal(); v = 1.0 + c * x; } while (v <= 0.0);
-            v = v * v * v;
-            const double u = uniform();
-            if (std::log(u) < 0.5 * x * x + d - d * v + d * std::log(v)) return d * v;
-        }
-    }
-
-  private:
-    static std::uint64_t rotl(std::uint64_t x, int k) { return (x << k) | (x >> (64 - k)); }
-    std::uint64_t s_[4];
-    double spare_ = 0.0;
-    bool has_spare_ = false;
-};
-
-inline Rng chunk_rng(std::uint64_t seed, std::int64_t chunk) {
-    return Rng(seed ^ (0xD1B54A32D192ED03ULL * static_cast<std::uint64_t>(chunk + 1)));
-}
-
-inline double norm_cdf(double x) { return 0.5 * std::erfc(-x * M_SQRT1_2); }
-
-template <class Fn>
-void parallel_chunks(std::int64_t n_chunks, int threads, Fn&& fn) {
-    threads = std::max(1, std::min<int>(threads, static_cast<int>(n_chunks)));
-    std::atomic<std::int64_t> next{0};
-    auto worker = [&](int tid) {
-        for (std::int64_t c; (c = next.fetch_add(1)) < n_chunks;) fn(c, tid);
-    };
-    std::vector<std::thread> pool;
-    for (int t = 1; t < threads; ++t) pool.emplace_back(worker, t);
-    worker(0);
-    for (auto& th : pool) th.join();
-}
-
-}  // namespace
 
 // ------------------------------------------------------------ set-up -------
 CreditKernel::CreditKernel(int n_, int k_, const double* loadings, const double* chol_lower,
@@ -146,6 +65,8 @@ CreditKernel::CreditKernel(int n_, int k_, const double* loadings, const double*
 // --------------------------------------------------------- scenario ---------
 namespace {
 
+inline double norm_cdf(double x) { return 0.5 * std::erfc(-x * M_SQRT1_2); }
+
 template <class OnDefault>
 double run_scenario(const CreditKernel& m, Rng& rng, double* z, double* f,
                     std::int64_t* n_cand, OnDefault&& on_default) {
@@ -192,8 +113,8 @@ double run_scenario(const CreditKernel& m, Rng& rng, double* z, double* f,
 void CreditKernel::simulate(std::int64_t n_scen, std::uint64_t seed, int threads,
                             std::int64_t chunk, double* losses_out) const {
     const std::int64_t n_chunks = (n_scen + chunk - 1) / chunk;
-    parallel_chunks(n_chunks, threads, [&](std::int64_t ch, int) {
-        Rng rng = chunk_rng(seed, ch);
+    parallel_tasks(n_chunks, threads, [&](std::int64_t ch, int) {
+        Rng rng = task_rng(seed, ch);
         std::vector<double> z(k), f(k);
         const std::int64_t lo = ch * chunk, hi = std::min(n_scen, lo + chunk);
         for (std::int64_t s = lo; s < hi; ++s)
@@ -208,8 +129,8 @@ std::int64_t CreditKernel::conditional_sums(std::int64_t n_scen, std::uint64_t s
     threads = std::max(1, std::min<int>(threads, static_cast<int>(n_chunks)));
     std::vector<std::vector<double>> part(threads, std::vector<double>(n, 0.0));
     std::vector<std::int64_t> count(threads, 0);
-    parallel_chunks(n_chunks, threads, [&](std::int64_t ch, int tid) {
-        Rng rng = chunk_rng(seed, ch);
+    parallel_tasks(n_chunks, threads, [&](std::int64_t ch, int tid) {
+        Rng rng = task_rng(seed, ch);
         std::vector<double> z(k), f(k);
         std::vector<int> defaults;
         const std::int64_t lo = ch * chunk, hi = std::min(n_scen, lo + chunk);
@@ -233,7 +154,7 @@ std::int64_t CreditKernel::conditional_sums(std::int64_t n_scen, std::uint64_t s
 }
 
 double CreditKernel::candidates_per_scenario(std::int64_t n_scen, std::uint64_t seed) const {
-    Rng rng = chunk_rng(seed, 0);
+    Rng rng = task_rng(seed, 0);
     std::vector<double> z(k), f(k);
     std::int64_t cand = 0;
     for (std::int64_t s = 0; s < n_scen; ++s)

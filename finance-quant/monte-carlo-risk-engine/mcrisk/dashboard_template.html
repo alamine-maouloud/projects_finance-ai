@@ -155,6 +155,7 @@ html { scroll-behavior: smooth; }
     <a href="#credit">Credit portfolio</a>
     <a href="#market">Market risk</a>
     <a href="#ccr">Counterparty &amp; CVA</a>
+    <a href="#lob">Microstructure</a>
     <a href="#performance">Performance</a>
     <a href="#method">Methods</a>
   </nav>
@@ -287,6 +288,59 @@ html { scroll-behavior: smooth; }
       </div>
     </section>
 
+    <section id="lob">
+      <div class="sec-head"><span class="eyebrow">Market microstructure · execution</span><h2>A simulated order book, and what it costs to trade in it</h2>
+        <p class="lede">A price-time priority matching engine in C++ fed by Monte Carlo order flow: limit orders and cancellations follow Cont, Stoikov &amp; Talreja (2010), market orders a bivariate Hawkes process. The same engine then executes liquidation schedules, so impact comes from walking real queues rather than from a formula.</p></div>
+      <div class="tiles t4" id="lob-tiles"></div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Average depth profile</h3>
+          <p class="sub">Resting lots at each distance from the best quote, over one simulated trading day.</p>
+          <div class="chart-host" id="ch-depth"></div>
+          <div class="legend" id="lg-depth"></div>
+        </div>
+        <div class="panel">
+          <h3>Fat tails fade with aggregation</h3>
+          <p class="sub">Excess kurtosis of mid-price changes by sampling interval (log scale). Clustered market orders keep the tails fat for longer.</p>
+          <div class="chart-host" id="ch-kurt"></div>
+          <div class="legend" id="lg-kurt"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Price response to a market order</h3>
+          <p class="sub">R(τ) = E[ε (m(t + τ) − m(t))] in ticks, ε = +1 for buys (log time axis).</p>
+          <div class="chart-host" id="ch-resp"></div>
+          <div class="legend" id="lg-resp"></div>
+        </div>
+        <div class="panel">
+          <h3>Stylised facts</h3>
+          <p class="sub">Same limit-order and cancellation rates; only the market-order process changes.</p>
+          <div class="tbl-wrap" id="facts-table"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Calibration: maximum likelihood recovers the model</h3>
+        <p class="sub">Rates re-estimated from one simulated day with the closed-form Poisson MLE (counts over exposure time), and a Hawkes fit on the market-order times.</p>
+        <div class="tbl-wrap" id="calib-table"></div>
+        <p class="sub" id="hawkes-line" style="margin:0"></p>
+      </div>
+      <div class="panel">
+        <h3>Efficient frontier: Almgren-Chriss vs the book</h3>
+        <p class="sub" id="frontier-sub"></p>
+        <div class="chart-host" id="ch-front"></div>
+        <div class="legend" id="lg-front"></div>
+        <div class="tbl-wrap" id="front-table"></div>
+      </div>
+      <div class="panel">
+        <h3>Liquidation horizon grows with position size</h3>
+        <p class="sub">99% cost-at-risk of a TWAP liquidation (one child order per minute) by horizon, in the simulated book. Hollow markers: the book could not absorb the whole position in time.</p>
+        <div class="chart-host" id="ch-liq"></div>
+        <div class="legend" id="lg-liq"></div>
+        <div class="tbl-wrap" id="liq-table"></div>
+      </div>
+    </section>
+
     <section id="performance">
       <div class="sec-head"><span class="eyebrow">Performance</span><h2>Throughput of the credit engine</h2>
         <p class="lede">The NumPy engine draws one latent variable per obligor and scenario. The C++ kernel samples defaults by exact Bernoulli thinning: a bound on each block's conditional PD, geometric skipping, then acceptance. Its cost grows with the number of defaults, not the number of obligors.</p></div>
@@ -326,6 +380,12 @@ IMCC = ½ ES_total + ½ Σ_classes ES_class</pre>
 P(t,T) = P(0,T)/P(0,t) · exp(½[V(t,T) − V(0,T) + V(0,t)] − B(t,T)x)
 D(0,t) = P(0,t) · exp(−∫x − ½V(0,t))</pre>
           <p>(x, ∫x) is simulated jointly and exactly. Collateral at t reflects V(t − MPoR) net of thresholds; CVA = (1−R) Σ E[D·E⁺] ΔPD, with wrong-way risk through a calibrated stochastic intensity (Hull &amp; White, 2012).</p></div>
+        <div class="panel"><h3>Order book and execution</h3>
+          <pre class="f">limit order at i ticks from the opposite best:  rate λ(i) = k / i^a
+cancellation of each resting order at i ticks:  rate θ(i)
+market orders:  λ_b(t) = μ₀ + Σ α_s e^{−β(t−t_k^b)} + Σ α_c e^{−β(t−t_k^s)}
+E[cost] = ½γX² + εX + (η̃/τ) Σ n_k²,   Var = σ² τ Σ x_k²</pre>
+          <p>Poisson parts are exact competing clocks, the Hawkes part uses Ogata thinning; maximum likelihood from sufficient statistics recovers every rate. Almgren-Chriss parameters are estimated on the simulated book itself (volatility, depth-walk cost, permanent impact with common random numbers).</p></div>
         <div class="panel"><h3>Pricing library</h3>
           <pre class="f">Heston: QE scheme (Andersen 2008) + martingale correction
         vs Gil-Pelaez inversion ("little trap" CF)
@@ -340,6 +400,8 @@ American: Longstaff-Schwartz, out-of-sample exercise rule</pre>
           <li>BCBS (2005). An explanatory note on the Basel II IRB risk weight functions. BCBS (2019). Minimum capital requirements for market risk (MAR33).</li>
           <li>Barone-Adesi, G., Giannopoulos, K. &amp; Vosper, L. (1999). VaR without correlations for portfolios of derivative securities.</li>
           <li>Andersen, L. (2008). Simple and efficient simulation of the Heston stochastic volatility model.</li>
+          <li>Cont, R., Stoikov, S. &amp; Talreja, R. (2010). A stochastic model for order book dynamics. <i>Operations Research</i> 58(3). Almgren, R. &amp; Chriss, N. (2000). Optimal execution of portfolio transactions. <i>Journal of Risk</i> 3.</li>
+          <li>Hawkes, A. (1971). Spectra of some self-exciting and mutually exciting point processes. Bacry, E., Mastromatteo, I. &amp; Muzy, J.-F. (2015). Hawkes processes in finance.</li>
           <li>Brigo, D. &amp; Mercurio, F. (2006). <i>Interest Rate Models: Theory and Practice</i>. Hull, J. &amp; White, A. (2012). CVA and wrong-way risk.</li>
         </ol>
       </div>
@@ -614,6 +676,60 @@ American: Longstaff-Schwartz, out-of-sample exercise rule</pre>
     });
   }
 
+  // ---------------------------------------------------------------- xy chart
+  function xyChart(host, o) {
+    host.innerHTML = "";
+    const W = Math.max(280, host.clientWidth), H = o.height || 300;
+    const m = { l: o.ml || 54, r: 18, t: 14, b: 40 };
+    const all = o.series.flatMap((s) => s.pts);
+    let x0 = Math.min(...all.map((p) => p[0])), x1 = Math.max(...all.map((p) => p[0]));
+    let y0 = Math.min(...all.map((p) => p[1])), y1 = Math.max(...all.map((p) => p[1]));
+    if (o.zeroY) y0 = Math.min(0, y0);
+    if (!o.xLog) { const px_ = (x1 - x0) * 0.05; x0 = o.zeroX ? Math.min(0, x0) : x0 - px_; x1 += px_; }
+    else { x0 /= 1.25; x1 *= 1.25; }
+    const py = (y1 - y0) * 0.08; y1 += py; if (!o.zeroY) y0 -= py;
+    const tx = o.xLog ? Math.log10 : (v) => v;
+    const sx = (v) => m.l + ((tx(v) - tx(x0)) / (tx(x1) - tx(x0))) * (W - m.l - m.r);
+    const sy = (v) => H - m.b - ((v - y0) / (y1 - y0)) * (H - m.t - m.b);
+    const g = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": o.aria || "" }, host);
+    ticks(y0, y1, 5).forEach((v) => {
+      svg("line", { x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), style: `stroke:var(${v === 0 ? "--axis" : "--hair"});stroke-width:1` }, g);
+      svg("text", { x: m.l - 8, y: sy(v) + 4, "text-anchor": "end" }, g).textContent = o.yFmt ? o.yFmt(v) : fmt(v, 0);
+    });
+    const xt = o.xTicks || (o.xLog ? logTicks(x0, x1) : ticks(x0, x1, Math.max(3, Math.floor((W - m.l) / 90))));
+    xt.forEach((v) => {
+      svg("text", { x: sx(v), y: H - m.b + 18, "text-anchor": "middle" }, g).textContent = o.xFmt ? o.xFmt(v) : fmt(v, 0);
+    });
+    svg("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, style: "stroke:var(--axis);stroke-width:1" }, g);
+    if (o.xLabel) svg("text", { x: W - m.r, y: H - 6, "text-anchor": "end" }, g).textContent = o.xLabel;
+    if (o.yLabel) svg("text", { x: m.l, y: m.t - 2 }, g).textContent = o.yLabel;
+    const marks = [];
+    o.series.forEach((s) => {
+      if (s.line !== false && s.pts.length > 1) {
+        const d = s.pts.map((p, i) => (i ? "L" : "M") + sx(p[0]).toFixed(1) + " " + sy(p[1]).toFixed(1)).join("");
+        svg("path", { d, style: `fill:none;stroke:${s.color};stroke-width:2;stroke-linejoin:round;${s.dash ? "stroke-dasharray:5 4;" : ""}` }, g);
+      }
+      s.pts.forEach((p) => {
+        const hollow = s.hollow && s.hollow(p);
+        if (s.markers) svg("circle", { cx: sx(p[0]), cy: sy(p[1]), r: 4.5,
+          style: hollow ? `fill:var(--surface);stroke:${s.color};stroke-width:2` : `fill:${s.color};stroke:var(--surface);stroke-width:2` }, g);
+        marks.push({ s, p, x: sx(p[0]), y: sy(p[1]) });
+      });
+    });
+    const ring = svg("circle", { r: 7, style: "fill:none;stroke:var(--ink);stroke-width:1.5;visibility:hidden" }, g);
+    const hit = svg("rect", { x: 0, y: 0, width: W, height: H, style: "fill:transparent" }, g);
+    hit.addEventListener("pointermove", (ev) => {
+      const r = g.getBoundingClientRect();
+      const x = ((ev.clientX - r.left) / r.width) * W, y = ((ev.clientY - r.top) / r.height) * H;
+      let best = null, bd = 30 * 30;
+      marks.forEach((mk) => { const d = (mk.x - x) ** 2 + (mk.y - y) ** 2; if (d < bd) { bd = d; best = mk; } });
+      if (!best) { ring.style.visibility = "hidden"; hideTip(); return; }
+      ring.setAttribute("cx", best.x); ring.setAttribute("cy", best.y); ring.style.visibility = "visible";
+      showTip(ev, o.tip(best.s, best.p));
+    });
+    hit.addEventListener("pointerleave", () => { ring.style.visibility = "hidden"; hideTip(); });
+  }
+
   // ---------------------------------------------------------------- tables
   function table(host, cols, rows, opt = {}) {
     const th = cols.map((c) => `<th class="${c.num ? "num" : ""}" scope="col">${esc(c.h)}</th>`).join("");
@@ -662,6 +778,10 @@ American: Longstaff-Schwartz, out-of-sample exercise rule</pre>
     `Only the GARCH-filtered model passes the Kupiec test out of sample (${bt.fhs.exceptions} exceptions for ${fmt(bt.fhs.expected, 1)} expected, p = ${fmt(bt.fhs.p_value, 2)}); historical simulation is breached ${bt.historical.exceptions} times, ${bt.historical.exceptions_in_crisis} of them in the crisis windows.`,
     `A CSA with EUR 10m thresholds halves EEPE (EUR ${fmt(unc.eepe_m, 1)} m to ${fmt(csa.eepe_m, 1)} m); adding EUR 15m of initial margin brings it to ${fmt(im.eepe_m, 2)} m. Netting alone saves ${fmt(100 * (1 - X.netting.net_epe_m / X.netting.gross_epe_m), 0)}% of EPE.`,
   ];
+  if (D.lob) {
+    const b = D.lob.liquidity.best;
+    findings.push(`In the simulated order book, the time needed to liquidate grows with size (${Object.entries(b).map(([k, v]) => `${k} lots: ${fmt(v.lob_best, 0)} min`).join(", ")}), while linear-impact Almgren-Chriss keeps recommending ${fmt(b["180"].ac_best, 0)} to ${fmt(b["540"].ac_best, 0)} minutes: it cannot see the book running out of depth.`);
+  }
   $("#findings").innerHTML = findings.map((f) => `<li>${esc(f)}</li>`).join("");
 
   // ---- validation
@@ -868,6 +988,107 @@ American: Longstaff-Schwartz, out-of-sample exercise rule</pre>
     { h: "MtM today", num: 1, f: (r) => fmt(Math.abs(r.mtm_m) < 5e-4 ? 0 : r.mtm_m, 2) },
     { h: "EPE contribution", num: 1, f: (r) => fmt(r.epe_contrib_m, 2) },
   ], X.trades);
+
+  // ---- microstructure
+  const L = D.lob;
+  if (L) {
+    const po = L.poisson, hw = L.hawkes, lq = L.liquidity, fr = L.frontier;
+    const best540 = lq.best["540"];
+    $("#lob-tiles").innerHTML = [
+      ["Simulation speed", `${fmt(L.sim.events_per_second / 1e6, 1)}<small>M events/s</small>`, `one trading day (${fmt(L.sim.events_per_day, 0)} events) in ${fmt(L.sim.seconds_per_day, 2)} s`],
+      ["Spread at one tick", pct(po.spread[0], 0), `mean depth ${fmt(lq.book_depth_lots, 0)} lots within ${L.sim.levels} ticks`],
+      ["Trade clustering", `${fmt(hw.dispersion, 1)}×`, `dispersion index of trade counts with Hawkes (branching ${fmt(L.hawkes_branching, 1)}), ${fmt(po.dispersion, 2)} with Poisson`],
+      ["Liquidation horizon, 540 lots", `${fmt(best540.lob_best, 0)}<small>min</small>`, `Almgren-Chriss would choose ${fmt(best540.ac_best, 0)} min; the book cannot absorb it`],
+    ].map(([l, v, n]) => `<div class="tile"><span class="label">${esc(l)}</span><span class="value">${v}</span><span class="note">${esc(n)}</span></div>`).join("");
+
+    const dl = po.depth.map((_, i) => i);
+    chart($("#ch-depth"), (h) => lineChart(h, {
+      x: dl, height: 250, zero: true, xLabel: "ticks from the best quote", yLabel: "lots", tipX: (i) => `${i} ticks from best`,
+      yFmt: (v) => fmt(v, 1), xFmt: (v) => fmt(v, 0),
+      series: [{ name: "Poisson market orders", color: "var(--s1)", y: po.depth, markers: 1, fmt: (v) => fmt(v, 2) },
+               { name: "Hawkes market orders", color: "var(--s2)", y: hw.depth, markers: 1, fmt: (v) => fmt(v, 2) }],
+      aria: "Depth profile",
+    }));
+    legend($("#lg-depth"), [{ name: "Poisson market orders", color: "var(--s1)" }, { name: "Hawkes market orders", color: "var(--s2)" }]);
+    chart($("#ch-kurt"), (h) => lineChart(h, {
+      x: L.lags.kurtosis, xLog: true, height: 250, zero: true, xLabel: "sampling interval, s", yLabel: "excess kurtosis",
+      tipX: (x) => `${fmt(x, 0)} s`, yFmt: (v) => fmt(v, 0),
+      series: [{ name: "Poisson market orders", color: "var(--s1)", y: po.kurtosis, markers: 1, fmt: (v) => fmt(v, 2) },
+               { name: "Hawkes market orders", color: "var(--s2)", y: hw.kurtosis, markers: 1, fmt: (v) => fmt(v, 2) }],
+      aria: "Kurtosis by horizon",
+    }));
+    legend($("#lg-kurt"), [{ name: "Poisson market orders", color: "var(--s1)" }, { name: "Hawkes market orders", color: "var(--s2)" }]);
+    const rl = L.lags.response.map((l, i) => [l, i]).filter(([l]) => l > 0);
+    chart($("#ch-resp"), (h) => lineChart(h, {
+      x: rl.map(([l]) => l), xLog: true, height: 250, zero: true, xLabel: "lag τ, s", yLabel: "ticks",
+      tipX: (x) => `τ = ${fmt(x, 0)} s`, yFmt: (v) => fmt(v, 1),
+      series: [{ name: "Poisson market orders", color: "var(--s1)", y: rl.map(([, i]) => po.response[i]), markers: 1, fmt: (v) => fmt(v, 3) },
+               { name: "Hawkes market orders", color: "var(--s2)", y: rl.map(([, i]) => hw.response[i]), markers: 1, fmt: (v) => fmt(v, 3) }],
+      aria: "Response function",
+    }));
+    legend($("#lg-resp"), [{ name: "Poisson market orders", color: "var(--s1)" }, { name: "Hawkes market orders", color: "var(--s2)" }]);
+    const k60 = L.lags.kurtosis.indexOf(60), r300 = L.lags.response.indexOf(300);
+    table($("#facts-table"), [{ h: "Statistic", k: "k" }, { h: "Poisson", num: 1, f: (r) => r.p }, { h: "Hawkes", num: 1, f: (r) => r.h }], [
+      { k: "Spread = 1 tick", p: pct(po.spread[0], 1), h: pct(hw.spread[0], 1) },
+      { k: "Lag-1 autocorrelation of 1-s mid changes (bid-ask bounce)", p: fmt(po.acf1, 3), h: fmt(hw.acf1, 3) },
+      { k: "Excess kurtosis, 1 s", p: fmt(po.kurtosis[0], 2), h: fmt(hw.kurtosis[0], 2) },
+      { k: "Excess kurtosis, 60 s", p: fmt(po.kurtosis[k60], 2), h: fmt(hw.kurtosis[k60], 2) },
+      { k: "Dispersion index of trade counts (1 = Poisson)", p: fmt(po.dispersion, 2), h: fmt(hw.dispersion, 2) },
+      { k: "Coefficient of variation of trade durations", p: fmt(po.duration_cv, 2), h: fmt(hw.duration_cv, 2) },
+      { k: "Price response after 300 s, ticks", p: fmt(po.response[r300], 2), h: fmt(hw.response[r300], 2) },
+    ]);
+    const cb = L.calibration;
+    table($("#calib-table"), [
+      { h: "Distance (ticks)", num: 1, f: (r) => r.i }, { h: "λ(i) true", num: 1, f: (r) => fmt(r.lt, 3) }, { h: "λ(i) MLE", num: 1, f: (r) => fmt(r.le, 3) },
+      { h: "θ(i) true", num: 1, f: (r) => fmt(r.tt, 3) }, { h: "θ(i) MLE", num: 1, f: (r) => fmt(r.te, 3) },
+    ], cb.lam_true.map((v, i) => ({ i: i + 1, lt: v, le: cb.lam_est[i], tt: cb.theta_true[i], te: cb.theta_est[i] })));
+    const hf = cb.hawkes_fit, ht = cb.hawkes_true;
+    $("#hawkes-line").textContent = `Market orders: μ = ${fmt(cb.mu_est, 3)} per second estimated for ${fmt(cb.mu_true, 2)} true. Hawkes fit on ${fmt(hf.events, 0)} buy orders: α = ${fmt(hf.alpha, 3)} ± ${fmt(hf.se[1], 3)} (true ${fmt(ht.alpha, 2)}), β = ${fmt(hf.beta, 3)} ± ${fmt(hf.se[2], 3)} (true ${fmt(ht.beta, 2)}).`;
+
+    const ok = fr.points.filter((p) => p.fill_rate >= 0.99);
+    $("#frontier-sub").textContent = `Selling ${fr.size} lots over ${fmt(fr.minutes, 0)} minutes in ${fr.children} child orders, cost in basis points of notional. The curve is the closed form with parameters estimated on the book; dots are the same schedules executed in the simulated book (${ok.length} of ${fr.points.length} schedules the book can absorb). Almgren-Chriss extrapolates the permanent impact of a single 20-lot block linearly to the whole position, so it overstates the cost of patient schedules; its most risk-averse schedules front-load child orders larger than the displayed depth.`;
+    chart($("#ch-front"), (h) => xyChart(h, {
+      height: 280, zeroX: true, xLabel: "standard deviation of cost, bp", yLabel: "expected cost, bp", xFmt: (v) => fmt(v, 0), yFmt: (v) => fmt(v, 0),
+      series: [
+        { name: "Almgren-Chriss frontier", color: "var(--s1)", pts: fr.curve.slice().sort((a, b) => a[0] - b[0]) },
+        { name: "Executed in the simulated book", color: "var(--s2)", line: false, markers: true, pts: ok.map((p) => [p.lob_sd, p.lob_mean, p]) },
+      ],
+      tip: (s, p) => p[2] ? `<b>λ = ${p[2].lambda}</b>` + tipRow(s.color, "Mean cost", `${fmt(p[1], 1)} ± ${fmt(p[2].lob_mean_se, 1)} bp`) + tipRow(null, "Std. deviation", `${fmt(p[0], 1)} bp`) + tipRow(null, "First child", `${fmt(p[2].first_child, 0)} lots`)
+        : `<b>Almgren-Chriss</b>` + tipRow(s.color, "Expected cost", `${fmt(p[1], 1)} bp`) + tipRow(null, "Std. deviation", `${fmt(p[0], 1)} bp`),
+      aria: "Efficient frontier",
+    }));
+    legend($("#lg-front"), [{ name: "Almgren-Chriss closed form", color: "var(--s1)" }, { name: "Same schedule in the simulated book", color: "var(--s2)", kind: "dot" }]);
+    table($("#front-table"), [
+      { h: "Risk aversion λ", num: 1, f: (r) => r.lambda === 0 ? "0 (TWAP)" : r.lambda.toExponential(0) },
+      { h: "First child (lots)", num: 1, f: (r) => fmt(r.first_child, 0) },
+      { h: "Filled", num: 1, f: (r) => pct(r.fill_rate, 1) },
+      { h: "AC mean / sd (bp)", num: 1, f: (r) => `${fmt(r.ac_mean, 1)} / ${fmt(r.ac_sd, 1)}` },
+      { h: "Book mean / sd (bp)", num: 1, f: (r) => r.fill_rate >= 0.99 ? `${fmt(r.lob_mean, 1)} / ${fmt(r.lob_sd, 1)}` : "-" },
+      { h: "Feasible", f: (r) => r.fill_rate >= 0.99 ? `<span class="pill good">✓ yes</span>` : `<span class="pill crit">✗ book exhausted</span>` },
+    ], fr.points);
+
+    const sizes = [...new Set(lq.rows.map((r) => r.size))];
+    const cols = ["var(--s1)", "var(--s2)", "var(--s3)"];
+    chart($("#ch-liq"), (h) => xyChart(h, {
+      height: 300, xLog: true, xLabel: "liquidation horizon, minutes", yLabel: "99% cost-at-risk, bp",
+      xTicks: [...new Set(lq.rows.map((r) => r.horizon_min))], xFmt: (v) => fmt(v, 0), yFmt: (v) => fmt(v, 0),
+      series: sizes.map((x, i) => ({ name: `${x} lots`, color: cols[i], markers: true, hollow: (p) => p[2].fill_rate < 0.995,
+        pts: lq.rows.filter((r) => r.size === x).map((r) => [r.horizon_min, r.car, r]) })),
+      tip: (s, p) => `<b>${esc(s.name)} over ${fmt(p[0], 0)} min</b>` + tipRow(s.color, "Cost-at-risk 99%", `${fmt(p[1], 1)} bp`)
+        + tipRow(null, "Mean cost", `${fmt(p[2].mean, 1)} bp`) + tipRow(null, "Spread + walking", `${fmt(p[2].spread_impact, 1)} bp`)
+        + tipRow(null, "Filled", pct(p[2].fill_rate, 1)) + tipRow(null, "AC cost-at-risk", `${fmt(p[2].ac_car, 1)} bp`),
+      aria: "Liquidation cost-at-risk by horizon",
+    }));
+    legend($("#lg-liq"), [...sizes.map((x, i) => ({ name: `${x} lots (${pct(x / lq.mo_volume_30min, 0)} of 30-min sell flow)`, color: cols[i], kind: "dot" })),
+      { name: "Hollow: position not fully absorbed", color: "var(--muted)", kind: "dot" }]);
+    table($("#liq-table"), [
+      { h: "Position (lots)", num: 1, f: (r) => r.size },
+      { h: "Share of 30-min sell flow", num: 1, f: (r) => pct(r.size / lq.mo_volume_30min, 0) },
+      { h: "Shortest full liquidation", num: 1, f: (r) => r.b.min_full_fill == null ? "-" : `${fmt(r.b.min_full_fill, 0)} min` },
+      { h: "Optimal horizon, book", num: 1, f: (r) => r.b.lob_best == null ? "-" : `${fmt(r.b.lob_best, 0)} min` },
+      { h: "Optimal horizon, Almgren-Chriss", num: 1, f: (r) => `${fmt(r.b.ac_best, 0)} min` },
+    ], sizes.map((x) => ({ size: x, b: lq.best[String(x)] })));
+  }
 
   // ---- performance
   if (B.length) {

@@ -311,7 +311,107 @@ def validation_section(quick: bool) -> list[dict]:
         100 * po.std() / np.sqrt(po.size), 100 * hw.payer_swaption(5.0, pay_t, kk))
     d = p.discount[:, 1]
     add("Discount factor E[D(0,5y)]", "Curve P(0,5y)", d.mean(), d.std() / np.sqrt(d.size), float(EUR_CURVE.discount(5.0)))
+
+    from .lob import execution as lx, flow as lf, hawkes as lh
+    ip = lx.ImpactParams(sigma=1.0, eta=15.0, gamma=0.3, eps=0.7)
+    sc = lx.ac_schedule(180, 1200, 20, 3e-4, ip)
+    e_ac, _ = lx.ac_moments(sc, ip)
+    sh = lx.ac_simulate(sc, ip, 400_000, np.random.default_rng(7))
+    add("Almgren-Chriss expected cost (ticks x lots)", "Almgren-Chriss closed form", sh.mean(),
+        sh.std() / np.sqrt(sh.size), e_ac)
+    ht = lh.simulate(0.4, 0.9, 1.5, 40_000.0, np.random.default_rng(8))
+    hf = lh.fit(ht, 40_000.0)
+    add("Hawkes MLE, excitation alpha", "True parameter (alpha = 0.9)", hf.alpha, hf.stderr[1], 0.9)
+    if lf.available():
+        m = lf.FlowModel.cst()
+        r = lf.simulate(m, 23_400.0, seed=9, record_mo=False)
+        th = r.n_cancel[0] / r.queue_time[0]
+        add("Order book MLE, cancellation rate theta_1", "True parameter (CST)", th,
+            th / np.sqrt(r.n_cancel[0]), m.theta[0])
     return out
+
+
+def lob_section(quick: bool) -> dict | None:
+    from .lob import BID, FlowModel, available, simulate
+    from .lob import execution as E
+    from .lob import stylized as S
+
+    if not available():
+        return None
+    day = 23_400.0
+    base, hk = FlowModel.cst(), FlowModel.cst(hawkes_branching=0.7)
+    t = time.perf_counter()
+    rp = simulate(base, day, seed=11)
+    t_sim = time.perf_counter() - t
+    rh = simulate(hk, day, seed=12)
+    k_lags = [1, 2, 5, 10, 30, 60, 120, 300]
+    s_lags = [1, 2, 5, 10, 30, 60, 120, 300, 600]
+    r_lags = [0, 1, 2, 5, 10, 30, 60, 120, 300]
+
+    def facts(r):
+        buys = r.mo_t[r.mo_side == BID]
+        return {"spread": [_r(x) for x in S.spread_distribution(r.spread)],
+                "depth": [_r(x, 3) for x in S.depth_profile(r.depth_bid, r.depth_ask)],
+                "kurtosis": [_r(x, 3) for x in S.kurtosis_by_horizon(r.mid, k_lags)],
+                "signature": [_r(x, 4) for x in S.signature_plot(r.mid, s_lags)],
+                "response": [_r(x, 4) for x in S.response_function(r.mo_t, r.mo_side, r.mo_mid_before, r.mid, r_lags)],
+                "acf1": _r(S.autocorrelation(S.increments(r.mid, 1), [1])[0], 4),
+                "dispersion": _r(S.dispersion_index(buys, day, 60), 3),
+                "duration_cv": _r(S.duration_cv(buys), 3),
+                "events": r.n_events, "market_orders": r.n_market}
+
+    est = rp.calibrate()
+    h0 = FlowModel.cst(hawkes_branching=0.7, cross_share=0.0)
+    rh0 = simulate(h0, 40_000.0, seed=13)
+    hf = rh0.fit_hawkes(BID)
+
+    m = FlowModel.cst(hawkes_branching=0.7, levels=20)
+    p, diag = E.estimate_impact(m, seed=1, perm_paths=300 if quick else 1000)
+    bps = 1e4 / m.p0
+    n_paths = 200 if quick else 1000
+    x_f, t_f, n_f = 180, 1200.0, 20
+    lams = [0.0, 1e-5, 3e-5, 6e-5, 1e-4, 3e-4, 1e-3]
+    curve = E.ac_frontier(x_f, t_f, n_f, p, np.concatenate([[1e-9], np.geomspace(1e-5, 5e-3, 40)]))
+    pts = []
+    for lam in lams:
+        sc = E.ac_schedule(x_f, t_f, n_f, lam, p)
+        rr = E.execute_in_book(m, sc, n_paths, seed=int(lam * 1e6) + 17)
+        shb = rr["shortfall"] * bps / x_f
+        e_ac, v_ac = E.ac_moments(sc, p)
+        pts.append({"lambda": lam, "lob_mean": _r(shb.mean(), 3), "lob_sd": _r(shb.std(ddof=1), 3),
+                    "lob_mean_se": _r(shb.std(ddof=1) / np.sqrt(shb.size), 3),
+                    "ac_mean": _r(e_ac * bps / x_f, 3), "ac_sd": _r(np.sqrt(v_ac) * bps / x_f, 3),
+                    "first_child": _r(sc.trades[0], 1), "fill_rate": _r(rr["fill_rate"], 4)})
+    study = E.liquidity_study(m, p, sizes=(60, 180, 540),
+                              horizons_min=(2, 5, 10, 20, 40) if quick else (2, 5, 10, 20, 40, 80),
+                              n_paths=n_paths, seed=3)
+    for row in study["rows"]:
+        for k_, v in list(row.items()):
+            if isinstance(v, float):
+                row[k_] = _r(v, 4)
+    mo_30min = m.mu * 1800
+    return {
+        "sim": {"events_per_day": rp.n_events, "seconds_per_day": _r(t_sim, 4),
+                "events_per_second": _r(rp.n_events / t_sim, 0), "levels": base.depth,
+                "tick_bp": _r(bps, 3)},
+        "lags": {"kurtosis": k_lags, "signature": s_lags, "response": r_lags},
+        "poisson": facts(rp), "hawkes": facts(rh), "hawkes_branching": hk.branching_ratio,
+        "calibration": {"lam_true": [_r(x) for x in base.lam], "lam_est": [_r(x) for x in est.lam],
+                        "theta_true": [_r(x) for x in base.theta], "theta_est": [_r(x) for x in est.theta],
+                        "mu_true": base.mu, "mu_est": _r(est.mu),
+                        "hawkes_true": {"alpha": h0.alpha_self, "beta": h0.beta, "mu0": _r(h0.mu * (1 - h0.branching_ratio))},
+                        "hawkes_fit": {"alpha": _r(hf.alpha), "beta": _r(hf.beta), "mu0": _r(hf.mu),
+                                       "se": [_r(x, 4) for x in hf.stderr], "events": hf.n_events}},
+        "impact": {"sigma": _r(p.sigma, 4), "eta": _r(p.eta, 4), "gamma": _r(p.gamma, 4), "eps": _r(p.eps, 4),
+                   "concession": [_r(x, 4) for x in diag["concession"]], "child_sizes": diag["child_sizes"],
+                   "perm_drift": _r(diag["perm_drift"], 3), "perm_drift_se": _r(diag["perm_drift_se"], 3)},
+        "frontier": {"size": x_f, "minutes": t_f / 60, "children": n_f,
+                     "curve": [[_r(r_[2] * bps / x_f, 4), _r(r_[1] * bps / x_f, 4)] for r_ in curve],
+                     "points": pts},
+        "liquidity": {"rows": study["rows"], "best": {str(k_): v for k_, v in study["best"].items()},
+                      "mo_volume_30min": _r(mo_30min, 0), "book_depth_lots": _r(float(np.sum(
+                          S.depth_profile(rp.depth_bid, rp.depth_ask))), 1)},
+    }
 
 
 def main(argv=None):
@@ -323,7 +423,7 @@ def main(argv=None):
     results = {"meta": {"version": "0.1.0", "quick": args.quick, "threads": os.cpu_count(),
                         "native_kernel": native.available()}}
     for name, fn in [("validation", validation_section), ("credit", credit_section),
-                     ("market", market_section), ("ccr", ccr_section)]:
+                     ("market", market_section), ("ccr", ccr_section), ("lob", lob_section)]:
         t = time.perf_counter()
         results[name] = fn(args.quick)
         print(f"{name:<10} done in {time.perf_counter() - t:6.1f}s")

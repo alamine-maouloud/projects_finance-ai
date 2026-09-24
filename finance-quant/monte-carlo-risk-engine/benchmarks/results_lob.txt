@@ -1,0 +1,6 @@
+model                               events/day   s/day  M events/s
+CST, Poisson market orders             880,940   0.057        15.4
+CST, Hawkes market orders (n=0.7)      880,916   0.057        15.4
+CST, 20 levels, Hawkes               1,317,421   0.114        11.6
+
+2,000 independent 40-min books with a 30-order TWAP on 10 threads: 5.02 s
