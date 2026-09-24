@@ -33,7 +33,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 |---|---|---|
 | [Banking Anomaly Detection](machine-learning/banking-anomaly-detection) | Python, scikit-learn, Streamlit | Unsupervised fraud detection (Isolation Forest), AUC-ROC 0.90, interactive investigation dashboard |
 | [Federated Learning for Fraud Detection](machine-learning/federated-learning-fraud) | Python | Research internship at CSNET Lab: privacy-preserving fraud detection across institutions <!-- TODO: add key result --> |
-| [AI-Driven Quantum Gate Calibration](machine-learning/quantum-gate-calibration) | Python, QuTiP, Stable-Baselines3 | Two-qubit CZ gate: GRAPE optimal control + residual RL (SAC, TD3, DDPG, PPO) correcting pulses for device drift, benchmarked on 100 noisy devices |
+| [AI-Driven Quantum Gate Calibration](machine-learning/quantum-gate-calibration) | Python, QuTiP, Stable-Baselines3 | AI calibration of a two-qubit CZ gate: deep RL agents (SAC, TD3, DDPG, PPO) correct GRAPE optimal-control pulses for device drift, benchmarked on 100 noisy devices |
 
 ## 🗄️ Data Engineering & Research Software
 

@@ -1,6 +1,6 @@
 # AI-Driven Quantum Gate Calibration — Two-Qubit CZ Gate
 
-Robust calibration of a two-qubit CZ gate under device parameter drift, combining **optimal control (GRAPE)** with **residual reinforcement learning**.
+AI-driven calibration of a two-qubit CZ gate under device parameter drift: **deep reinforcement learning agents** learn to correct **optimal-control (GRAPE)** pulses for each device.
 
 ## Problem
 
@@ -9,7 +9,7 @@ Real superconducting qubits never match their nominal parameters exactly: qubit 
 ## Approach
 
 1. **Optimal control baseline (GRAPE)**: pulses are optimized on the nominal two-qubit Hamiltonian (transmon-like, 2-level truncation) with QuTiP.
-2. **Residual RL**: an agent observes the device's parameter deviations and outputs small corrections to the GRAPE pulses, expressed in a 20-mode cosine basis to keep pulses smooth. Reward = fidelity gain over the GRAPE baseline on that device.
+2. **AI agent (residual deep RL)**: an agent observes the device's parameter deviations and outputs small corrections to the GRAPE pulses, expressed in a 20-mode cosine basis to keep pulses smooth. Reward = fidelity gain over the GRAPE baseline on that device.
 3. **Algorithm benchmark**: SAC, TD3, DDPG and PPO (Stable-Baselines3), trained on randomly sampled noisy devices.
 4. **Control experiment**: RL alone (no GRAPE baseline) on the nominal Hamiltonian, to show why the hybrid approach is needed.
 
