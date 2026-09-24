@@ -24,8 +24,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 | Project | Stack | Highlights |
 |---|---|---|
-| [Black-Scholes Option Pricer](finance-quant/black-scholes-pricer) | C++17, CMake | Closed-form pricing of European calls/puts with full Greeks (Delta, Gamma, Vega, Theta) via CLI |
-| [Monte Carlo Asset Price Simulator](finance-quant/monte-carlo-simulator) | C++, STL, CMake | 1M GBM paths, variance reduction, convergence error < 0.25% vs Black-Scholes |
+| [Monte Carlo Risk Engine (mcrisk)](finance-quant/monte-carlo-risk-engine) | Python, C++17, pybind11 | Credit, market (FRTB IMA) and counterparty risk (CVA, wrong-way risk) in one engine; every model validated against closed-form results; C++ kernel up to ×5 faster than NumPy; 58 tests |
 | [Limit Order Book Engine](finance-quant/limit-order-book) | C++17, STL | Bid/ask order management with price-time priority matching and trade execution logging |
 | [Real Estate Investment Analysis](finance-quant/real-estate-investment-analysis) | Python | <!-- TODO: one-line summary + key result --> |
 
