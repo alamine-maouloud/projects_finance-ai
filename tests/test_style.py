@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FORBIDDEN = {"—": "em dash", "–": "en dash"}
+FORBIDDEN = {chr(0x2014): "em dash", chr(0x2013): "en dash"}
 
 
 def test_no_long_dashes_in_tracked_files():
