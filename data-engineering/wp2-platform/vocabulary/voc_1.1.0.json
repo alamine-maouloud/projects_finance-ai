@@ -1,0 +1,552 @@
+{
+  "vocabulary_version": "1.1.0",
+  "schema_version": "1.1",
+  "generated": "2026-08-13",
+  "authority": "Prof. Efthymios Papatzikis (PI, WP2)",
+  "source": "CONTROLLED_VOCABULARY_voc_1.1.0_LOCKED.md",
+  "note": "Authoritative manifest. Keys are DATASET_SPEC v1.1 field names. Shared value sets appear under every field that uses them. Codes are immutable; the store records codes, never labels.",
+  "concepts": {
+    "l1_sex": [
+      {
+        "code": "SEX_MALE",
+        "label": "Male"
+      },
+      {
+        "code": "SEX_FEMALE",
+        "label": "Female"
+      },
+      {
+        "code": "SEX_INDETERMINATE",
+        "label": "Indeterminate / ambiguous"
+      }
+    ],
+    "l1_primary_diagnosis": [
+      {
+        "code": "DX_PREMATURITY",
+        "label": "Prematurity / complications of preterm birth"
+      },
+      {
+        "code": "DX_RDS",
+        "label": "Respiratory distress syndrome"
+      },
+      {
+        "code": "DX_RESP_OTHER",
+        "label": "Other respiratory (TTN, pneumonia, air leak)"
+      },
+      {
+        "code": "DX_SEPSIS",
+        "label": "Sepsis (suspected or confirmed)"
+      },
+      {
+        "code": "DX_HIE",
+        "label": "Hypoxic-ischaemic encephalopathy / perinatal asphyxia"
+      },
+      {
+        "code": "DX_JAUNDICE",
+        "label": "Hyperbilirubinaemia / jaundice"
+      },
+      {
+        "code": "DX_HYPOGLYCAEMIA",
+        "label": "Hypoglycaemia"
+      },
+      {
+        "code": "DX_MAS",
+        "label": "Meconium aspiration syndrome"
+      },
+      {
+        "code": "DX_HYPOTHERMIA",
+        "label": "Hypothermia"
+      },
+      {
+        "code": "DX_LBW",
+        "label": "Low birth weight (no other primary diagnosis)"
+      },
+      {
+        "code": "DX_CONGENITAL_ANOMALY",
+        "label": "Congenital anomaly (EUROCAT-classified)"
+      },
+      {
+        "code": "DX_CARDIAC",
+        "label": "Congenital heart disease"
+      },
+      {
+        "code": "DX_SURGICAL",
+        "label": "Surgical condition (e.g. NEC, gastroschisis)"
+      },
+      {
+        "code": "DX_NEURO",
+        "label": "Neurological (seizures, IVH, malformation)"
+      },
+      {
+        "code": "DX_OTHER",
+        "label": "Other (specify in free text)"
+      }
+    ],
+    "l1_ethnicity": [
+      {
+        "code": "ETH_NOT_RECORDED",
+        "label": "Not recorded / declined"
+      },
+      {
+        "code": "ETH_SITE_VALUE",
+        "label": "(a value from the site's configured national/census scheme; `l1ethnicityscheme` records which scheme)"
+      }
+    ],
+    "l1_antenatal_corticosteroids": [
+      {
+        "code": "ACS_COMPLETE",
+        "label": "Complete course"
+      },
+      {
+        "code": "ACS_PARTIAL",
+        "label": "Partial course"
+      },
+      {
+        "code": "ACS_NONE",
+        "label": "Not received"
+      },
+      {
+        "code": "ACS_UNKNOWN",
+        "label": "Unknown"
+      }
+    ],
+    "l1_surfactant": [
+      {
+        "code": "SURF_NONE",
+        "label": "Not administered"
+      },
+      {
+        "code": "SURF_ETT",
+        "label": "Administered via ETT (incl. INSURE)"
+      },
+      {
+        "code": "SURF_LISA",
+        "label": "Administered via LISA / MIST"
+      },
+      {
+        "code": "SURF_UNKNOWN",
+        "label": "Unknown"
+      }
+    ],
+    "l1_brain_injury_ivh": [
+      {
+        "code": "IVH_NONE",
+        "label": "No IVH"
+      },
+      {
+        "code": "IVH_GRADE_1",
+        "label": "IVH grade I"
+      },
+      {
+        "code": "IVH_GRADE_2",
+        "label": "IVH grade II"
+      },
+      {
+        "code": "IVH_GRADE_3",
+        "label": "IVH grade III"
+      },
+      {
+        "code": "IVH_GRADE_4",
+        "label": "IVH grade IV / periventricular haemorrhagic infarction"
+      }
+    ],
+    "l1_brain_injury_pvl": [
+      {
+        "code": "PVL_NONE",
+        "label": "No PVL"
+      },
+      {
+        "code": "PVL_PRESENT",
+        "label": "PVL present"
+      }
+    ],
+    "l1_cld_bpd": [
+      {
+        "code": "BPD_NONE",
+        "label": "None"
+      },
+      {
+        "code": "BPD_MILD",
+        "label": "Mild"
+      },
+      {
+        "code": "BPD_MODERATE",
+        "label": "Moderate"
+      },
+      {
+        "code": "BPD_SEVERE",
+        "label": "Severe"
+      }
+    ],
+    "l1_rop_result": [
+      {
+        "code": "ROP_NOT_DONE",
+        "label": "ROP screen not done / not yet due"
+      },
+      {
+        "code": "ROP_NORMAL",
+        "label": "No ROP"
+      },
+      {
+        "code": "ROP_STAGE_1",
+        "label": "ROP stage 1"
+      },
+      {
+        "code": "ROP_STAGE_2",
+        "label": "ROP stage 2"
+      },
+      {
+        "code": "ROP_STAGE_3",
+        "label": "ROP stage 3"
+      },
+      {
+        "code": "ROP_STAGE_4_5",
+        "label": "ROP stage 4-5"
+      },
+      {
+        "code": "ROP_PLUS",
+        "label": "Plus disease"
+      }
+    ],
+    "l1_hearing_result": [
+      {
+        "code": "HEAR_NOT_DONE",
+        "label": "Hearing screen not done"
+      },
+      {
+        "code": "HEAR_PASS",
+        "label": "Hearing screen pass"
+      },
+      {
+        "code": "HEAR_REFER",
+        "label": "Hearing screen refer / fail"
+      }
+    ],
+    "l1_feeding_status_discharge": [
+      {
+        "code": "FEED_BREAST",
+        "label": "Breastfeeding / breast milk"
+      },
+      {
+        "code": "FEED_BOTTLE",
+        "label": "Bottle / formula"
+      },
+      {
+        "code": "FEED_TUBE",
+        "label": "Tube (NG / OG)"
+      },
+      {
+        "code": "FEED_MIXED",
+        "label": "Mixed"
+      },
+      {
+        "code": "FEED_NA",
+        "label": "Not applicable"
+      }
+    ],
+    "l2_intervention_type": [
+      {
+        "code": "ITYPE_MUSIC",
+        "label": "Music-based intervention (v1)"
+      },
+      {
+        "code": "ITYPE_KANGAROO",
+        "label": "Kangaroo / skin-to-skin care (future)"
+      },
+      {
+        "code": "ITYPE_ENVIRONMENTAL",
+        "label": "Environmental light / noise study (future)"
+      },
+      {
+        "code": "ITYPE_NIDCAP",
+        "label": "NIDCAP-cycled handling (future)"
+      },
+      {
+        "code": "ITYPE_OTHER",
+        "label": "Other (future)"
+      }
+    ],
+    "l2_respiratory_support": [
+      {
+        "code": "RESP_ROOM_AIR",
+        "label": "Room air"
+      },
+      {
+        "code": "RESP_LOW_FLOW",
+        "label": "Low-flow oxygen"
+      },
+      {
+        "code": "RESP_HIGH_FLOW",
+        "label": "High-flow nasal cannula"
+      },
+      {
+        "code": "RESP_CPAP",
+        "label": "CPAP"
+      },
+      {
+        "code": "RESP_NIPPV",
+        "label": "Non-invasive positive pressure (NIPPV)"
+      },
+      {
+        "code": "RESP_VENT",
+        "label": "Invasive ventilation (intubated)"
+      }
+    ],
+    "l2_nutrition": [
+      {
+        "code": "NUT_MOM",
+        "label": "Mother's own milk"
+      },
+      {
+        "code": "NUT_DONOR",
+        "label": "Donor human milk"
+      },
+      {
+        "code": "NUT_FORTIFIED",
+        "label": "Fortified human milk"
+      },
+      {
+        "code": "NUT_FORMULA",
+        "label": "Formula"
+      },
+      {
+        "code": "NUT_MIXED",
+        "label": "Mixed (human milk + formula)"
+      },
+      {
+        "code": "NUT_PARENTERAL",
+        "label": "Parenteral nutrition"
+      },
+      {
+        "code": "NUT_NIL",
+        "label": "Nil by mouth"
+      }
+    ],
+    "l2_recent_surgery": [
+      {
+        "code": "SURG_NONE",
+        "label": "None"
+      },
+      {
+        "code": "SURG_NEC",
+        "label": "NEC / bowel surgery"
+      },
+      {
+        "code": "SURG_PDA",
+        "label": "PDA ligation"
+      },
+      {
+        "code": "SURG_ROP",
+        "label": "ROP / eye surgery (laser, anti-VEGF)"
+      },
+      {
+        "code": "SURG_NEURO",
+        "label": "Neurosurgical (shunt / VP)"
+      },
+      {
+        "code": "SURG_CARDIAC",
+        "label": "Cardiac surgery"
+      },
+      {
+        "code": "SURG_ABDO_OTHER",
+        "label": "Other abdominal surgery"
+      },
+      {
+        "code": "SURG_OTHER",
+        "label": "Other (specify)"
+      }
+    ],
+    "l2_ambient_noise": [
+      {
+        "code": "NOISE_LOW",
+        "label": "Low (< 45 dB)"
+      },
+      {
+        "code": "NOISE_MODERATE",
+        "label": "Moderate (45-60 dB)"
+      },
+      {
+        "code": "NOISE_HIGH",
+        "label": "High (> 60 dB)"
+      }
+    ],
+    "l2_lighting": [
+      {
+        "code": "LIGHT_DIM",
+        "label": "Dim"
+      },
+      {
+        "code": "LIGHT_MODERATE",
+        "label": "Moderate"
+      },
+      {
+        "code": "LIGHT_BRIGHT",
+        "label": "Bright"
+      }
+    ],
+    "l3_unit_condition": [
+      {
+        "code": "COND_CLASSICAL",
+        "label": "Classical music"
+      },
+      {
+        "code": "COND_LULLABY",
+        "label": "Lullabies"
+      },
+      {
+        "code": "COND_WHITE_NOISE",
+        "label": "White noise"
+      },
+      {
+        "code": "COND_SILENCE",
+        "label": "Silence (control)"
+      }
+    ],
+    "l3_unit_delivery_mode": [
+      {
+        "code": "DELIV_SPEAKER",
+        "label": "Speaker"
+      },
+      {
+        "code": "DELIV_HEADPHONES",
+        "label": "Headphones"
+      },
+      {
+        "code": "DELIV_LIVE_VOICE",
+        "label": "Live voice"
+      },
+      {
+        "code": "DELIV_INSTRUMENT",
+        "label": "Live instrument"
+      },
+      {
+        "code": "DELIV_RECORDED",
+        "label": "Recorded playback"
+      }
+    ],
+    "l4_behavioural_state_start": [
+      {
+        "code": "STATE_1_DEEP_SLEEP",
+        "label": "1 - Deep sleep"
+      },
+      {
+        "code": "STATE_2_LIGHT_SLEEP",
+        "label": "2 - Light sleep"
+      },
+      {
+        "code": "STATE_3_DROWSY",
+        "label": "3 - Drowsy"
+      },
+      {
+        "code": "STATE_4_QUIET_ALERT",
+        "label": "4 - Quiet alert"
+      },
+      {
+        "code": "STATE_5_ACTIVE_ALERT",
+        "label": "5 - Active alert"
+      },
+      {
+        "code": "STATE_6_CRYING",
+        "label": "6 - Crying"
+      }
+    ],
+    "l4_behavioural_state_end": [
+      {
+        "code": "STATE_1_DEEP_SLEEP",
+        "label": "1 - Deep sleep"
+      },
+      {
+        "code": "STATE_2_LIGHT_SLEEP",
+        "label": "2 - Light sleep"
+      },
+      {
+        "code": "STATE_3_DROWSY",
+        "label": "3 - Drowsy"
+      },
+      {
+        "code": "STATE_4_QUIET_ALERT",
+        "label": "4 - Quiet alert"
+      },
+      {
+        "code": "STATE_5_ACTIVE_ALERT",
+        "label": "5 - Active alert"
+      },
+      {
+        "code": "STATE_6_CRYING",
+        "label": "6 - Crying"
+      }
+    ],
+    "l5_overall_outcome": [
+      {
+        "code": "OUT_COMPLETE",
+        "label": "Complete"
+      },
+      {
+        "code": "OUT_ABORTED_INFANT",
+        "label": "Aborted - infant cues / instability"
+      },
+      {
+        "code": "OUT_ABORTED_CLINICAL",
+        "label": "Aborted - clinical / external"
+      },
+      {
+        "code": "OUT_PARTIAL",
+        "label": "Partial"
+      }
+    ],
+    "l5_clinician_impression": [
+      {
+        "code": "IMP_1",
+        "label": "1 - Very poor"
+      },
+      {
+        "code": "IMP_2",
+        "label": "2 - Poor"
+      },
+      {
+        "code": "IMP_3",
+        "label": "3 - Neutral"
+      },
+      {
+        "code": "IMP_4",
+        "label": "4 - Good"
+      },
+      {
+        "code": "IMP_5",
+        "label": "5 - Very good"
+      }
+    ],
+    "l6_parent_participation": [
+      {
+        "code": "PART_NONE",
+        "label": "Not present"
+      },
+      {
+        "code": "PART_PASSIVE",
+        "label": "Present, passive"
+      },
+      {
+        "code": "PART_ACTIVE",
+        "label": "Active (guided singing)"
+      },
+      {
+        "code": "PART_SKIN_TO_SKIN",
+        "label": "Skin-to-skin"
+      }
+    ],
+    "l7_eeg_quality_flag": [
+      {
+        "code": "EEGQ_GOOD",
+        "label": "Good"
+      },
+      {
+        "code": "EEGQ_ARTEFACTED",
+        "label": "Heavily artefacted"
+      },
+      {
+        "code": "EEGQ_UNUSABLE",
+        "label": "Unusable"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+# WP2 Platform - dependencies
+# Supported Python: 3.10, 3.11, 3.12, 3.13
+# Python 3.10+ required (uses X | Y type hints)
+# Install: pip install -r requirements.txt
+
+streamlit>=1.36.0,<2.0.0
+duckdb>=1.1.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+
+# Optional - AI features (Ollama must be running separately)
+# pip install chromadb sentence-transformers
