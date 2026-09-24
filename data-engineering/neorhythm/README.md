@@ -12,7 +12,7 @@ Desktop application that delivers randomized auditory stimulation protocols to p
 
 ## Stack
 
-Python · tkinter (GUI) · pygame (audio engine) · PyInstaller (packaging)
+Python · tkinter (GUI) · pygame (audio engine) · pyttsx3 (text-to-speech) · PyInstaller (packaging)
 
 ## Run it
 
