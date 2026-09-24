@@ -1,6 +1,8 @@
 # Projects — Al-Amine Maouloud
 
-**M2 Data & AI @ ECE Paris** · Quantitative finance · Machine learning · Data engineering
+**M2 Data & AI @ ECE Paris** · Exchange semester in Quantitative Finance @ University of Oslo (Autumn 2026)
+
+Quantitative finance · Machine learning · Data engineering
 
 I build things end-to-end: pricing engines in C++, ML pipelines in Python, and data platforms used in real research settings.
 
@@ -13,6 +15,8 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 ![SQL](https://img.shields.io/badge/SQL-336791?logo=postgresql&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 ![C](https://img.shields.io/badge/C-A8B9CC?logo=c&logoColor=white)
+![Java](https://img.shields.io/badge/Java-007396?logo=openjdk&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?logo=php&logoColor=white)
 
 ---
 
@@ -45,9 +49,9 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 | Project | Stack | Highlights |
 |---|---|---|
-| [Quoridor](software-web/quoridor) | C | Full board game implementation: rules, move validation, game logic |
-| [Appli Shop](software-web/appli-shop) | Web | E-commerce style app: catalog, cart and checkout flows |
-| [Mini LinkedIn](software-web/mini-linkedin) | Web | Social platform with profiles, connections and feed |
+| [Quoridor](software-web/quoridor) | C, CMake | Full board game implementation: rules, move validation, game logic |
+| [Appli Shop](software-web/appli-shop) | Java, MVC, SQL | E-commerce app with MVC architecture: catalog, cart, payment, client and admin areas |
+| [Mini LinkedIn](software-web/mini-linkedin) | PHP, HTML/CSS, SQL | Professional social network: profiles, connection requests, messaging, job offers |
 
 ## 📚 Learning
 
@@ -61,4 +65,4 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 - Email: maouloudalamines@outlook.fr
 - GitHub: [@alamine-maouloud](https://github.com/alamine-maouloud)
-- LinkedIn: <!-- TODO: add link -->
+- LinkedIn: [Al-Amine Maouloud](https://www.linkedin.com/in/al-amine-maouloud-412a89249)
