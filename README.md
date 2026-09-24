@@ -40,8 +40,8 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 | Project | Stack | Highlights |
 |---|---|---|
-| [WP2 Research Data Platform](data-engineering/wp2-platform) | Python, Streamlit, SQLite, DuckDB | Clinical research data platform: 71-field schema, 3-layer validation, de-identified exports, audit trail, local LLM (text-to-SQL + RAG) |
-| [NeoRhythm](data-engineering/neorhythm) | Python, tkinter, pygame | Desktop app delivering randomized auditory protocols for NICU research |
+| [NICU Clinical Research Data Platform](data-engineering/nicu-research-data-platform) | Python, Streamlit, SQLite, DuckDB | Clinical research data platform: 71-field schema, 3-layer validation, de-identified exports, audit trail, local LLM (text-to-SQL + RAG) |
+| [NICU Auditory Stimulation App (NeoRhythm)](data-engineering/nicu-auditory-stimulation-app) | Python, tkinter, pygame | Desktop app delivering randomized auditory protocols for NICU research |
 | [qEEG Pipeline](data-engineering/qeeg-pipeline) | Python | <!-- TODO: one-line summary --> |
 
 ## 💻 Software & Web
@@ -49,7 +49,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 | Project | Stack | Highlights |
 |---|---|---|
 | [Quoridor](software-web/quoridor) | C, CMake | Full board game implementation: rules, move validation, game logic |
-| [Appli Shop](software-web/appli-shop) | Java, MVC, SQL | E-commerce app with MVC architecture: catalog, cart, payment, client and admin areas |
+| [Fashion Store](software-web/fashion-store) | Java, MVC, SQL | E-commerce app with MVC architecture: catalog, cart, payment, client and admin areas |
 | [Mini LinkedIn](software-web/mini-linkedin) | PHP, HTML/CSS, SQL | Professional social network: profiles, connection requests, messaging, job offers |
 
 ## 📚 Learning
