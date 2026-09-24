@@ -1,0 +1,8 @@
+logs/
+build/
+dist/
+stimuli/**/*.wav
+stimuli/**/*.mp3
+.venv/
+.DS_Store
+__pycache__/
