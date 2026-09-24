@@ -31,7 +31,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 | Project | Stack | Highlights |
 |---|---|---|
-| [Banking Fraud Detection](machine-learning/banking-anomaly-detection) | Python, pandas, scikit-learn, Streamlit | Card and payment fraud on a synthetic bank (557k transactions, 5 fraud typologies): leakage-tested behavioural features, rules vs Isolation Forest vs gradient boosting under a daily alert budget. PR-AUC 0.86 (0.02 for Isolation Forest on raw fields), 76% of fraud losses prevented reviewing 0.2% of transactions, reason codes per alert, investigation dashboard, 18 tests |
+| [Card & Payment Fraud Detection](machine-learning/card-payment-fraud-detection) | Python, scikit-learn, Streamlit | Fraud benchmark on 557k synthetic transactions and 5 fraud schemes: 25 behavioural features, gradient boosting detects 85% of fraud incidents and prevents 76% of losses with analysts reviewing 0.2% of transactions; every alert explained; 18 tests |
 | [Federated Learning for Fraud Detection](machine-learning/federated-learning-fraud) | Python | Research internship at CSNET Lab: privacy-preserving fraud detection across institutions <!-- TODO: add key result --> |
 | [AI-Driven Quantum Gate Calibration](machine-learning/quantum-gate-calibration) | Python, QuTiP, Stable-Baselines3 | AI calibration of a two-qubit CZ gate: deep RL agents (SAC, TD3, DDPG, PPO) correct GRAPE optimal-control pulses for device drift, benchmarked on 100 noisy devices |
 
