@@ -32,7 +32,6 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 | Project | Stack | Highlights |
 |---|---|---|
 | [Card & Payment Fraud Detection](machine-learning/card-payment-fraud-detection) | Python, scikit-learn, Streamlit | Fraud benchmark on 557k synthetic transactions and 5 fraud schemes: 25 behavioural features, gradient boosting detects 85% of fraud incidents and prevents 76% of losses with analysts reviewing 0.2% of transactions; every alert explained; 18 tests |
-| [Federated Learning for Fraud Detection](machine-learning/federated-learning-fraud) | Python | Research internship at CSNET Lab: privacy-preserving fraud detection across institutions <!-- TODO: add key result --> |
 | [AI-Driven Quantum Gate Calibration](machine-learning/quantum-gate-calibration) | Python, QuTiP, Stable-Baselines3 | AI calibration of a two-qubit CZ gate: deep RL agents (SAC, TD3, DDPG, PPO) correct GRAPE optimal-control pulses for device drift, benchmarked on 100 noisy devices |
 
 ## 🗄️ Data Engineering & Research Software
