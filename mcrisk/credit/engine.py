@@ -368,6 +368,7 @@ def simulate(
     factor_sampler=None,
     chunk: int | None = None,
     threads: int | None = None,
+    backend: str = "numpy",
 ) -> CreditRiskResult:
     """Simulate the portfolio loss distribution.
 
@@ -376,7 +377,17 @@ def simulate(
                     pilot estimate of VaR at max(alphas)
     contributions   Euler allocation of ES (and VaR) to obligors, by exact
                     replay of the random streams (second pass)
+    backend         "numpy" (vectorised, every feature) or "native" (C++
+                    Bernoulli-thinning kernel: plain MC, fixed LGD, cost per
+                    scenario ~ number of defaults instead of number of obligors)
     """
+    if backend == "native":
+        return _simulate_native(model, n_scenarios, alphas=alphas, seed=seed,
+                                contributions=contributions, contrib_alpha=contrib_alpha,
+                                method=method, factor_sampler=factor_sampler,
+                                chunk=chunk, threads=threads)
+    if backend != "numpy":
+        raise ValueError("backend must be 'numpy' or 'native'")
     t0 = time.perf_counter()
     p = model.portfolio
     chunk = chunk or _default_chunk(p.n)
@@ -473,3 +484,36 @@ def _euler_contributions(model, result, sizes, offsets, seed, plan,
     result.es_contrib = es_c * model.total
     result.var_contrib = var_c * model.total
     result.contrib_alpha = alpha
+
+
+def _simulate_native(model, n_scenarios, *, alphas, seed, contributions, contrib_alpha,
+                     method, factor_sampler, chunk, threads) -> CreditRiskResult:
+    from . import native
+
+    if method != "plain" or factor_sampler is not None:
+        raise ValueError("the native backend supports plain Monte Carlo without stress samplers")
+    t0 = time.perf_counter()
+    kern = native.kernel(model)
+    threads = threads or os.cpu_count() or 1
+    chunk = chunk or 4096
+    seed = int(seed) % 2**64
+    frac = kern.simulate(n_scenarios, seed, threads, chunk)
+    result = CreditRiskResult(
+        method="plain Monte Carlo (native)", losses=frac * model.total, weights=None,
+        alphas=tuple(alphas), total_exposure=model.total,
+        analytic_el=model.portfolio.expected_loss, elapsed=0.0,
+    )
+    if contributions:
+        alpha = contrib_alpha or max(alphas)
+        var = result.var(alpha) / model.total
+        dist = np.abs(frac - var)
+        k = max(int(0.02 * np.count_nonzero(frac >= var)), 100)
+        h = np.sort(dist)[min(k, dist.size - 1)]
+        es_sum, n_tail = kern.conditional_sums(n_scenarios, seed, threads, chunk, var, np.inf)
+        var_sum, n_win = kern.conditional_sums(n_scenarios, seed, threads, chunk, var - h, var + h)
+        var_c = var_sum / n_win
+        result.es_contrib = es_sum / n_tail * model.total
+        result.var_contrib = var_c * (var / var_c.sum()) * model.total
+        result.contrib_alpha = alpha
+    result.elapsed = time.perf_counter() - t0
+    return result
