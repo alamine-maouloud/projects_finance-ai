@@ -55,7 +55,10 @@ def _text(family: str, r) -> str:
             return f"EUR {r.amount:,.0f}, a round or just-below-threshold amount, {_ratio(r.amount_ratio)}"
         return f"EUR {r.amount:,.2f}, {_ratio(r.amount_ratio)}"
     if family == "velocity":
-        txt = f"{_n(r.n_1h, 'payment')} in the previous hour, {int(r.n_24h)} in 24 hours"
+        if r.n_1h > 0:
+            txt = f"{_n(r.n_1h, 'payment')} in the previous hour, {int(r.n_24h)} in 24 hours"
+        else:
+            txt = f"{_n(r.n_24h, 'payment')} in the previous 24 hours"
         if r.amount_24h_ratio > 3:
             txt += f"; 24-hour spend {r.amount_24h_ratio:.0f}x the usual payment"
         return txt
@@ -88,7 +91,9 @@ def _text(family: str, r) -> str:
         return f"little history ({_n(r.n_prev, 'previous transaction')})"
     if family == "category":
         kind = CHANNEL_NAMES.get(r.channel, r.channel)
-        return kind if r.channel == "P2P" else f"{kind} in category {r.mcc.replace('_', ' ')}"
+        if r.channel == "P2P":
+            return "payment type: bank transfer"
+        return f"payment type: {kind} in category {r.mcc.replace('_', ' ')}"
     return family
 
 
