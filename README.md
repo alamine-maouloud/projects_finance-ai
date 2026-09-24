@@ -1,3 +1,5 @@
+*[Version française](README.fr.md)*
+
 # mcrisk: a Monte Carlo risk engine for banking books
 
 `mcrisk` simulates the three risks that drive a bank's capital from one code base, and checks every engine against a closed-form result:
