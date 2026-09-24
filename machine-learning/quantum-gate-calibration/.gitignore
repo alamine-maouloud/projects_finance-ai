@@ -1,0 +1,4 @@
+*.dat
+*.png
+!figures/*.png
+__pycache__/

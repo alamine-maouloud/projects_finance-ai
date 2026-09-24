@@ -1,0 +1,6 @@
+numpy
+matplotlib
+gymnasium
+qutip
+qutip-qtrl
+stable-baselines3
