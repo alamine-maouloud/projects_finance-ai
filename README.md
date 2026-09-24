@@ -2,20 +2,21 @@
 
 # mcrisk: a Monte Carlo risk engine for banking books
 
-`mcrisk` simulates the three risks that drive a bank's capital from one code base, and checks every engine against a closed-form result:
+`mcrisk` simulates the three risks that drive a bank's capital, plus the market microstructure in which positions are actually traded, from one code base, and checks every engine against a closed-form result:
 
 | Risk | What is computed | Key techniques |
 |---|---|---|
 | **Portfolio credit** | Loss distribution, VaR / ES, economic capital, Euler allocation per obligor and sector, stress tests, Basel IRB comparison | Multi-factor Gaussian and Student-t copulas, downturn (beta) LGD, Glasserman-Li importance sampling with a defensive mixture, exact two-pass replay, C++ Bernoulli-thinning kernel |
 | **Market (FRTB IMA)** | 10-day VaR 99% and ES 97.5%, liquidity-horizon cascade, IMCC, component ES, out-of-sample backtests | Full revaluation of a multi-asset book, filtered historical simulation (GARCH), EWMA and Student-t scenarios, delta-gamma, Kupiec and Christoffersen tests, Basel traffic light |
 | **Counterparty (CCR / XVA)** | EE, ENE, PFE, EEPE, EAD (IMM), netting, CSA collateral with margin period of risk, CVA / DVA, wrong-way risk | Hull-White 1F fitted to a Nelson-Siegel-Svensson curve with exact simulation, path-dependent swap fixings, Hull-White (2012) stochastic-intensity wrong-way risk |
+| **Market microstructure** | Limit order book simulation, stylised facts, calibration, execution cost and liquidation horizon | C++ price-time priority matching engine, Cont-Stoikov-Talreja order flow with Hawkes market orders, maximum likelihood, Almgren-Chriss vs execution in the simulated book |
 | **Pricing library** | European, Asian, American and Heston options, swaptions | Antithetic variates, control variates, Sobol + Brownian bridge RQMC, Longstaff-Schwartz, Andersen QE scheme |
 
-Portfolios, the trading book and the market history are **synthetic**: they are generated from documented processes with known parameters, so every model can be tested against the truth. No client or vendor data is used.
+Portfolios, the trading book, the market history and the order flow are **synthetic**: they are generated from documented processes with known parameters, so every model can be tested against the truth. No client or vendor data is used.
 
 ## Headline results
 
-Full run: `python -m mcrisk.report` (71 s on an Apple M4, 10 threads).
+Full run: `python -m mcrisk.report` (140 s on an Apple M4, 10 threads).
 
 **Credit.** A 2,000-name corporate book (EUR 54.8 bn EAD, 15 systematic factors, 590 effective names), 2 million scenarios in 9.5 s:
 
@@ -55,6 +56,26 @@ Liquidity-adjusted ES is EUR 79.4 m and the IMCC EUR 95.1 m (28% diversification
 
 CVA is EUR 3.13 m (0.79 m under the CSA) and DVA EUR 1.01 m. Wrong-way risk with b = 1 raises CVA by 104%, right-way risk with b = −1 lowers it by 71%. Netting saves 34% of EPE.
 
+**Market microstructure.** A limit order book with the order-flow rates of Cont, Stoikov & Talreja (2010), 1 tick = 1 bp, simulated at 15 million events per second (one trading day of 881,000 events in 0.06 s):
+
+| Stylised fact | Poisson market orders | Hawkes market orders (n = 0.7) |
+|---|---:|---:|
+| Spread at one tick | 76% | 76% |
+| Excess kurtosis of mid changes, 1 s / 60 s | 4.4 / 0.0 | 6.8 / 1.0 |
+| Lag-1 autocorrelation of 1-s changes (bid-ask bounce) | −0.062 | −0.025 |
+| Dispersion index of trade counts (1 = Poisson) | 1.08 | 8.14 |
+| Price response 300 s after a market order (ticks) | 0.15 | 0.76 |
+
+Liquidating a position with one TWAP child order per minute, the 99% cost-at-risk is minimised over horizons at which the book can absorb the whole position:
+
+| Position | Share of 30-min sell flow | Optimal horizon, simulated book | Optimal horizon, Almgren-Chriss |
+|---:|---:|---:|---:|
+| 60 lots | 4% | 2 min | 2 min |
+| 180 lots | 11% | 10 min | 2 min |
+| 540 lots | 32% | 20 min | 5 min |
+
+The liquidation horizon grows with position size, which is the idea behind the FRTB liquidity horizons, observed here intraday. Linear-impact Almgren-Chriss cannot see the book running out of depth: at 2 minutes the simulated book fills only 48% of 180 lots and 16% of 540 lots.
+
 ## Validation
 
 Each estimate is compared with an exact or semi-analytic reference. z is the gap in units of the estimate's standard error.
@@ -72,8 +93,11 @@ Each estimate is compared with an exact or semi-analytic reference. z is the gap
 | Heston call K = 110, QE, Feller < 1 | Gil-Pelaez inversion | 3.406 ± 0.010 | 3.416 | −0.99 |
 | 5y × 10y payer swaption (× 100) | Hull-White / Jamshidian | 4.874 ± 0.010 | 4.872 | +0.24 |
 | E[D(0, 5y)] | Curve P(0, 5y) | 0.87299 ± 8e-5 | 0.87303 | −0.52 |
+| Almgren-Chriss expected cost | Closed form | 5,660.4 ± 1.9 | 5,658.4 | +1.04 |
+| Hawkes MLE, excitation α | True α = 0.9 | 0.921 ± 0.014 | 0.900 | +1.46 |
+| Order-book MLE, cancellation rate θ₁ | True θ₁ = 0.71 | 0.7114 ± 0.0031 | 0.7100 | +0.44 |
 
-The test suite (`pytest`, 58 tests) adds more properties: t-copula and beta LGD preserve the expected loss, Euler contributions add up to the tail mean, results are identical for any thread count, the swap value discounted by D(0, t) is a martingale, collateral lowers exposure monotonically, CVA with b = 0 reproduces the independent CVA exactly, and more.
+The test suite (`pytest`, 76 tests) adds more properties: t-copula and beta LGD preserve the expected loss, Euler contributions add up to the tail mean, results are identical for any thread count, the swap value discounted by D(0, t) is a martingale, collateral lowers exposure monotonically, CVA with b = 0 reproduces the independent CVA exactly, the C++ matching engine produces exactly the same fills and book as a pure-Python reference on random order streams, and more.
 
 ## Performance: the C++ thinning kernel
 
@@ -94,13 +118,15 @@ This is exact, handles the t-copula mixing variable, and costs O(blocks + defaul
 
 These timings come from `python benchmarks/bench_credit.py` and vary by about 20% from run to run. The NumPy baseline is already multi-threaded and BLAS-backed, so the gap comes from the algorithm, not from the language.
 
+The order-flow simulator (`cpp/src/lob_sim.cpp`) runs 15.4 million events per second on one thread with 10 levels (11.6 million with 20), and 2,000 independent 40-minute books with a 30-order TWAP take 5.0 s on 10 threads (`python benchmarks/bench_lob.py`).
+
 ## Quick start
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"                 # also builds the optional C++ kernel
 python setup.py build_ext --inplace     # rebuild the kernel after editing C++
-pytest -q                               # 58 tests, ~40 s
+pytest -q                               # 76 tests, ~40 s
 ```
 
 ```bash
@@ -109,6 +135,7 @@ mcrisk credit --method is --scenarios 200000            # importance sampling
 mcrisk credit --copula t --nu 6
 mcrisk market --backtest
 mcrisk ccr --csa
+mcrisk lob --execution                                  # order book, stylised facts, liquidation horizons
 mcrisk report                                           # full run -> out/results.json
 python -m mcrisk.dashboard out/results.json out/dashboard.html
 ```
@@ -134,12 +161,13 @@ mcrisk/
   credit/                    portfolio, factor model, engine (plain / IS), IRB, exact benchmarks, native bridge
   market/                    risk factors + synthetic history, trading book, scenarios (HS/EWMA/t/FHS), FRTB, backtests
   ccr/                       swaps under Hull-White, exposure metrics and CSA, CVA/DVA, wrong-way risk
+  lob/                       order flow (CST + Hawkes), Hawkes MLE, stylised facts, Almgren-Chriss and execution
   models/                    GBM, Merton, Heston (analytic + QE), Hull-White
   pricing/                   Black-Scholes family, variance-reduced MC, Longstaff-Schwartz
   report.py, dashboard.py    end-to-end run -> JSON -> self-contained HTML dashboard
-cpp/src/                     native credit kernel + pybind11 bindings; original Black-Scholes CLI pricer
-tests/                       58 tests: statistical validation against closed forms and invariants
-benchmarks/                  throughput of the credit backends
+cpp/src/                     native kernels (credit, order book, order flow) + pybind11 bindings; original Black-Scholes CLI pricer
+tests/                       76 tests: statistical validation against closed forms and invariants
+benchmarks/                  throughput of the credit backends and of the order-flow simulator
 ```
 
 ## Modelling notes and limitations
@@ -147,6 +175,7 @@ benchmarks/                  throughput of the credit backends
 - **Credit.** Default-mode (one-year) model. There is no rating migration or mark-to-market, and LGD is not correlated across obligors beyond the systematic factor. Importance sampling is implemented for the Gaussian copula with fixed LGD; for the t-copula or beta LGD, use plain MC (native or NumPy).
 - **Market.** GARCH is univariate per factor, and the dependence comes from bootstrapping whole residual vectors. The book is static over the horizon. The IMCC is computed on the current window; the stressed-period calibration ratio ES_R,S / ES_R,C of MAR33 is not implemented.
 - **Counterparty.** Single-curve discounting, a one-factor rates model (no smile, no multi-currency). The MTA is folded into the thresholds. Exposure is sampled on a half-monthly grid plus every cash-flow date.
+- **Microstructure.** Unit lot sizes, and a zero-intelligence flow in which limit orders are placed relative to the current quotes. As a result, the impact of a large order is largely permanent (the book rebuilds around the new price). The execution agent only sends market orders. Horizons are intraday; the link to FRTB liquidity horizons is conceptual, not a calibration.
 - **Data.** Everything is synthetic by design. Swapping in real inputs means replacing `synthetic_portfolio`, `synthetic_history` and the curve parameters.
 
 ## References
@@ -162,3 +191,6 @@ benchmarks/                  throughput of the credit backends
 - Longstaff, F. & Schwartz, E. (2001). Valuing American options by simulation. *Review of Financial Studies*.
 - Brigo, D. & Mercurio, F. (2006). *Interest Rate Models: Theory and Practice*. Springer.
 - Hull, J. & White, A. (2012). CVA and wrong-way risk. *Financial Analysts Journal*, 68(5).
+- Cont, R., Stoikov, S. & Talreja, R. (2010). A stochastic model for order book dynamics. *Operations Research*, 58(3).
+- Almgren, R. & Chriss, N. (2000). Optimal execution of portfolio transactions. *Journal of Risk*, 3.
+- Hawkes, A. (1971). Spectra of some self-exciting and mutually exciting point processes. *Biometrika*, 58(1). Bacry, E., Mastromatteo, I. & Muzy, J.-F. (2015). Hawkes processes in finance. *Market Microstructure and Liquidity*, 1(1).

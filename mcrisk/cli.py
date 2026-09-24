@@ -4,6 +4,7 @@
                    [--backend numpy|native] [--contributions]
     mcrisk market  [--scenarios N] [--backtest]
     mcrisk ccr     [--paths N] [--csa]
+    mcrisk lob     [--hours H] [--hawkes N] [--execution]
     mcrisk report  [--quick] [--out PATH]
 """
 
@@ -70,6 +71,37 @@ def _ccr(a):
     print(f"CVA (150 bp counterparty) : {cva(e, cube.discount, cube.times, 0.015) / M:.3f} m")
 
 
+def _lob(a):
+    import time
+
+    from .lob import BID, FlowModel, simulate
+    from .lob import execution as E
+    from .lob import stylized as S
+
+    m = FlowModel.cst(hawkes_branching=a.hawkes)
+    t0 = time.perf_counter()
+    r = simulate(m, 3600.0 * a.hours, seed=a.seed)
+    dt = time.perf_counter() - t0
+    est = r.calibrate()
+    buys = r.mo_t[r.mo_side == BID]
+    print(f"{r.n_events:,} events in {dt:.3f}s ({r.n_events / dt / 1e6:.1f} M events/s), "
+          f"{r.n_market:,} market orders, Hawkes branching {m.branching_ratio:.2f}")
+    print("spread P(1..6 ticks) :", np.round(S.spread_distribution(r.spread), 3))
+    print("depth profile (lots) :", np.round(S.depth_profile(r.depth_bid, r.depth_ask), 2))
+    print("kurtosis 1/10/60/300s:", np.round(S.kurtosis_by_horizon(r.mid, [1, 10, 60, 300]), 2))
+    print(f"dispersion index {S.dispersion_index(buys, r.horizon, 60):.2f}   "
+          f"duration CV {S.duration_cv(buys):.2f}")
+    print("MLE theta(i)         :", np.round(est.theta, 3))
+    print("true theta(i)        :", np.round(m.theta, 3))
+    if a.execution:
+        book = FlowModel.cst(hawkes_branching=a.hawkes, levels=20)
+        p, _ = E.estimate_impact(book, seed=a.seed)
+        print(f"\nimpact (ticks, s): sigma {p.sigma:.3f}  eta {p.eta:.2f}  gamma {p.gamma:.3f}  eps {p.eps:.3f}")
+        st = E.liquidity_study(book, p, sizes=(60, 180, 540), horizons_min=(2, 5, 10, 20, 40), n_paths=500)
+        for x, b in st["best"].items():
+            print(f"  {x:4d} lots: optimal horizon in the book {b['lob_best']} min, Almgren-Chriss {b['ac_best']} min")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="mcrisk", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -89,6 +121,10 @@ def main(argv=None):
     x = sub.add_parser("ccr")
     x.add_argument("--paths", type=int, default=10_000)
     x.add_argument("--csa", action="store_true")
+    b = sub.add_parser("lob")
+    b.add_argument("--hours", type=float, default=6.5)
+    b.add_argument("--hawkes", type=float, default=0.7, help="branching ratio of market orders")
+    b.add_argument("--execution", action="store_true")
     r = sub.add_parser("report")
     r.add_argument("--quick", action="store_true")
     r.add_argument("--out", default="out/results.json")
@@ -97,7 +133,7 @@ def main(argv=None):
         from .report import main as report_main
         report_main(["--out", a.out] + (["--quick"] if a.quick else []))
     else:
-        {"credit": _credit, "market": _market, "ccr": _ccr}[a.cmd](a)
+        {"credit": _credit, "market": _market, "ccr": _ccr, "lob": _lob}[a.cmd](a)
 
 
 if __name__ == "__main__":
