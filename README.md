@@ -1,51 +1,64 @@
-ACADEMIC & PERSONAL PROJECTS — Data • AI • Systems
+# Projects — Al-Amine Maouloud
 
-Hi, I'm Al-Amine Maouloud, M1 engineering student, passionate about Data/AI and solid software foundations.  
-I build ML prototypes end-to-end and I ship.  
-Actively looking for a Data/AI internship (from April 2026) in Singapore / Paris / Hong Kong / Shanghai / Bangkok.
+**M2 Data & AI @ ECE Paris** · Quantitative finance · Machine learning · Data engineering
 
-<p align="left">
-  <a href="#"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Pandas-Data-150458?logo=pandas&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/SQL-Queries-336791?logo=postgresql&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/C-Low%20level-A8B9CC?logo=c&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/HTML%2FCSS-Web-E34F26?logo=html5&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Java-Basics-007396?logo=java&logoColor=white" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/PHP-Web-777BB4?logo=php&logoColor=white" /></a>
-</p>
+I build things end-to-end: pricing engines in C++, ML pipelines in Python, and data platforms used in real research settings.
 
-Featured Projects
+🔎 **Currently looking for an internship starting January 2027.**
 
-1) ANOMALY DETECTION : Banking (Python, scikit-learn, Streamlit)
-   
-- Goal: detect suspicious transactions (unsupervised) and help analysts prioritize alerts.  
-- Tech : preprocessing (impute/scale/one-hot) > IsolationForest > Streamlit dashboard (threshold slider, Top-N, CSV export).  
-- What I built: clean (core/domain/app) architecture, synthetic data generator, and an interactive UI for investigation.
+![C++](https://img.shields.io/badge/C++17-00599C?logo=cplusplus&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-336791?logo=postgresql&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
+![C](https://img.shields.io/badge/C-A8B9CC?logo=c&logoColor=white)
 
-2) APPLI SHOP : Web app
-   
-- Goal: small e-commerce style application to practice front/back basics.
-- Focus: clean UI flows, simple cart/checkout logic, and static/dynamic pages.
-- Folder: APPLI SHOP
+---
 
-3) MINI LINKEDIN : Profiles & social features
-   
-- Goal: build a lightweight social/profile experience: profiles, connections, basic feeds.
-- Focus: data modeling, simple auth/UX decisions, component structure.
-- Folder: MINI LINKEDIN
+## 📈 Quantitative Finance
 
-4) QUORIDOR : Board game implementation
-   
-- Goal: implement the Quoridor board game logic and interactions.
-- Focus: algorithms, move validation, game rules, and clean code structure.
-- Folder: QUORIDOR
+| Project | Stack | Highlights |
+|---|---|---|
+| [Black-Scholes Option Pricer](finance-quant/black-scholes-pricer) | C++17, CMake | Closed-form pricing of European calls/puts with full Greeks (Delta, Gamma, Vega, Theta) via CLI |
+| [Monte Carlo Asset Price Simulator](finance-quant/monte-carlo-simulator) | C++, STL, CMake | 1M GBM paths, variance reduction, convergence error < 0.25% vs Black-Scholes |
+| [Limit Order Book Engine](finance-quant/limit-order-book) | C++17, STL | Bid/ask order management with price-time priority matching and trade execution logging |
+| [Real Estate Investment Analysis](finance-quant/real-estate-investment-analysis) | Python | <!-- TODO: one-line summary + key result --> |
 
+## 🤖 Machine Learning & AI
 
-📬 Contact
-Email: maouloudalamines@outlook.fr
-GitHub: @Alamine1209
+| Project | Stack | Highlights |
+|---|---|---|
+| [Banking Anomaly Detection](machine-learning/banking-anomaly-detection) | Python, scikit-learn, Streamlit | Unsupervised fraud detection (Isolation Forest), AUC-ROC 0.90, interactive investigation dashboard |
+| [Federated Learning for Fraud Detection](machine-learning/federated-learning-fraud) | Python | Research internship at CSNET Lab: privacy-preserving fraud detection across institutions <!-- TODO: add key result --> |
+| [AI-Driven Quantum Gate Calibration](machine-learning/quantum-gate-calibration) | Python | <!-- TODO: one-line summary + key result --> |
 
+## 🗄️ Data Engineering & Research Software
 
+| Project | Stack | Highlights |
+|---|---|---|
+| [WP2 Research Data Platform](data-engineering/wp2-platform) | Python, Streamlit, SQLite, DuckDB | Clinical research data platform: 71-field schema, 3-layer validation, de-identified exports, audit trail, local LLM (text-to-SQL + RAG) |
+| [NeoRhythm](data-engineering/neorhythm) | Python, tkinter, pygame | Desktop app delivering randomized auditory protocols for NICU research |
+| [qEEG Pipeline](data-engineering/qeeg-pipeline) | Python | <!-- TODO: one-line summary --> |
 
+## 💻 Software & Web
+
+| Project | Stack | Highlights |
+|---|---|---|
+| [Quoridor](software-web/quoridor) | C | Full board game implementation: rules, move validation, game logic |
+| [Appli Shop](software-web/appli-shop) | Web | E-commerce style app: catalog, cart and checkout flows |
+| [Mini LinkedIn](software-web/mini-linkedin) | Web | Social platform with profiles, connections and feed |
+
+## 📚 Learning
+
+| Project | Stack | Highlights |
+|---|---|---|
+| [Titanic Survival Prediction](learning/titanic) | Python, scikit-learn | Classic classification exercise: feature engineering and model comparison |
+
+---
+
+## 📬 Contact
+
+- Email: maouloudalamines@outlook.fr
+- GitHub: [@alamine-maouloud](https://github.com/alamine-maouloud)
+- LinkedIn: <!-- TODO: add link -->
