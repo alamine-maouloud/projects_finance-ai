@@ -43,7 +43,7 @@ Each alert is explained by occlusion: every family of related features (amount, 
 | Scheme | Transaction | Reasons given |
 |---|---|---|
 | Stolen card | in-store, EUR 45.76 | 4 payments just under the contactless limit within 2 hours; 2 payments in the previous hour, 3 in 24 hours; 8.3 h away from the customer's usual hours, at night |
-| Card testing | online, EUR 1.20 | 4 payments under EUR 5 in the previous 10 minutes, 6 new merchants in the hour; 6 payments in the previous hour |
+| Card testing | online, EUR 1.20 | 4 payments under EUR 5 in the previous 10 minutes, 6 new merchants in the previous hour; 6 payments in the previous hour |
 | Skimming | cash withdrawal, EUR 460 | first payment at this merchant; 1,375 km/h from the previous card-present payment (impossible travel) |
 | Account takeover | bank transfer, EUR 242 | online session from abroad, while the card was last used elsewhere; 24-hour spend 24x the usual payment |
 | Push payment scam | bank transfer, EUR 1,300 | a round or just-below-threshold amount, 45.9x the customer's median payment; 24-hour spend 145x the usual payment |
