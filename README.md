@@ -38,7 +38,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 
 | Project | Stack | Highlights |
 |---|---|---|
-| [NICU Clinical Research Data Platform](data-engineering/nicu-research-data-platform) | Python, Streamlit, SQLite, DuckDB | Clinical research data platform: 71-field schema, 3-layer validation, de-identified exports, audit trail, local LLM (text-to-SQL + RAG) |
+| [NICU Research Platform & Private AI Assistant](data-engineering/nicu-research-data-platform) | Python, Llama 3, ChromaDB, DuckDB, Streamlit | On-site LLM assistant for clinical research data: text-to-SQL, semantic RAG over clinicians' notes, note summarisation and data-quality checks, three-level guardrails and AI audit trail; built on a research data platform (71-field schema, validation, de-identified exports) |
 | [NICU Auditory Stimulation App (NeoRhythm)](data-engineering/nicu-auditory-stimulation-app) | Python, tkinter, pygame | Desktop app delivering randomized auditory protocols for NICU research |
 
 ## 💻 Software & Web
