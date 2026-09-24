@@ -1,4 +1,4 @@
-# Projects — Al-Amine Maouloud
+# Projects : Al-Amine Maouloud
 
 **M2 Data & AI @ ECE Paris** · Exchange semester in Quantitative Finance @ University of Oslo (Autumn 2026)
 
