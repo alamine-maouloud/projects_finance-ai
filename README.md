@@ -25,7 +25,7 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 | Project | Stack | Highlights |
 |---|---|---|
 | [mcrisk · Monte Carlo Risk Engine · Black-Scholes · Limit Order Book](finance-quant/monte-carlo-risk-engine) | Python, C++17, pybind11 | Credit, market (FRTB IMA), counterparty (CVA, wrong-way risk) and market microstructure in one engine: C++ price-time priority order book simulating 15M events/s with Hawkes order flow; every model validated against closed-form results; 76 tests |
-| [Real Estate Investment Analysis](finance-quant/real-estate-investment-analysis) | Python, Pandas, ipywidgets | Prototype dashboard on French 2023 sales and rent data, being rebuilt with a price-prediction model |
+| [Buy-to-Let Risk & Return in every French commune (immorisk)](finance-quant/real-estate-investment-analysis) | Python, pandas, Streamlit | 1.8M real DVF sales, hedonic price model and Fay-Herriot small-area estimation; 15-year after-tax cash flows under French taxation, 2,000 Monte Carlo paths per commune across 2,376 communes; IRR and probability of loss per commune; 34 tests |
 
 ## 🤖 Machine Learning & AI
 
