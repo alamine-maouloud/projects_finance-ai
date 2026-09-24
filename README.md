@@ -40,7 +40,6 @@ I build things end-to-end: pricing engines in C++, ML pipelines in Python, and d
 |---|---|---|
 | [NICU Clinical Research Data Platform](data-engineering/nicu-research-data-platform) | Python, Streamlit, SQLite, DuckDB | Clinical research data platform: 71-field schema, 3-layer validation, de-identified exports, audit trail, local LLM (text-to-SQL + RAG) |
 | [NICU Auditory Stimulation App (NeoRhythm)](data-engineering/nicu-auditory-stimulation-app) | Python, tkinter, pygame | Desktop app delivering randomized auditory protocols for NICU research |
-| [qEEG Pipeline](data-engineering/qeeg-pipeline) | Python | <!-- TODO: one-line summary --> |
 
 ## 💻 Software & Web
 
