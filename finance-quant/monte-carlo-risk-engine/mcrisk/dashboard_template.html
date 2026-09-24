@@ -1,0 +1,892 @@
+<title>mcrisk Risk Report</title>
+<meta name="description" content="Monte Carlo risk engine: portfolio credit capital, FRTB market risk and counterparty exposure with CVA, validated against closed-form benchmarks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+:root {
+  --ground: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #121821;
+  --ink-2: #475061;
+  --muted: #737d8c;
+  --hair: #e2e6ec;
+  --axis: #c3cad4;
+  --band: rgba(208, 59, 59, 0.07);
+  --accent: #1f5fbf;
+  --accent-wash: #e8effa;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --pnl: #a3abb8;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warn: #fab219;
+  --warn-text: #8a5a00;
+  --crit: #d03b3b;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0d1015; --surface: #151a21; --ink: #eef1f5; --ink-2: #b6becb; --muted: #8a93a1;
+    --hair: #252b34; --axis: #39414c; --band: rgba(230, 103, 103, 0.10); --accent: #7aa7ee;
+    --accent-wash: #1a2536; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pnl: #59626f;
+    --good-text: #3ec43e; --warn-text: #f2b53a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0d1015; --surface: #151a21; --ink: #eef1f5; --ink-2: #b6becb; --muted: #8a93a1;
+  --hair: #252b34; --axis: #39414c; --band: rgba(230, 103, 103, 0.10); --accent: #7aa7ee;
+  --accent-wash: #1a2536; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --pnl: #59626f;
+  --good-text: #3ec43e; --warn-text: #f2b53a;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 400 15px/1.55 var(--sans); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 28px 20px 64px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 40px; }
+header.top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; padding-bottom: 20px; border-bottom: 1px solid var(--hair); }
+.brand { display: flex; flex-direction: column; gap: 6px; max-width: 62ch; }
+.brand .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 600 clamp(28px, 4vw, 40px)/1.1 var(--serif); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.brand p { margin: 0; color: var(--ink-2); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 400 12px/1 var(--mono); color: var(--ink-2); border: 1px solid var(--hair); background: var(--surface); padding: 7px 10px; border-radius: 999px; white-space: nowrap; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; display: flex; flex-direction: column; gap: 2px; }
+nav.toc a { color: var(--ink-2); text-decoration: none; padding: 7px 10px; border-radius: 6px; font-weight: 500; font-size: 14px; }
+nav.toc a:hover { background: var(--accent-wash); color: var(--ink); }
+nav.toc a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { min-width: 0; display: flex; flex-direction: column; gap: 56px; }
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; }
+.sec-head .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h2 { font: 600 26px/1.2 var(--serif); margin: 0; text-wrap: balance; }
+h3 { font: 600 15px/1.3 var(--sans); margin: 0; }
+.lede { margin: 0; color: var(--ink-2); max-width: 72ch; }
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel .sub { margin: -6px 0 0; color: var(--muted); font-size: 13px; max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tiles { display: grid; gap: 12px; }
+.tiles.t5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tiles.t4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tile { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.tile .label { font-size: 13px; color: var(--ink-2); }
+.tile .value { font: 600 28px/1.15 var(--sans); letter-spacing: -.01em; }
+.tile .value small { font-size: 15px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+.tile .note { font-size: 12.5px; color: var(--muted); }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
+.facts b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.findings { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; max-width: 86ch; }
+.findings li::marker { color: var(--accent); }
+.chart-host { width: 100%; min-height: 60px; position: relative; }
+svg.chart { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--sans); }
+svg.chart text { font-size: 11.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+svg.chart text.lbl { fill: var(--ink-2); font-size: 12px; }
+svg.chart text.val { fill: var(--ink-2); font-size: 11.5px; }
+svg.chart text.mk { fill: var(--ink); font-size: 11.5px; font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.legend i.dash { background: none !important; border-top: 2px dashed; height: 0; }
+.legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.legend i.box { width: 10px; height: 10px; border-radius: 2px; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--hair); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: .02em; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.em td { font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 12px/1 var(--sans); padding: 4px 8px 4px 6px; border-radius: 999px; white-space: nowrap; border: 1px solid; }
+.pill.good { color: var(--good-text); border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 9%, transparent); }
+.pill.warn { color: var(--warn-text); border-color: color-mix(in srgb, var(--warn) 55%, transparent); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.pill.crit { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 45%, transparent); background: color-mix(in srgb, var(--crit) 9%, transparent); }
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 8px; padding: 2px; gap: 2px; flex-wrap: wrap; }
+.seg button { font: 500 13px/1 var(--sans); color: var(--ink-2); background: none; border: 0; padding: 7px 11px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-wash); color: var(--ink); }
+.row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.method { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.method .panel p { margin: 0; color: var(--ink-2); font-size: 14px; }
+pre.f { margin: 0; font: 400 12.5px/1.6 var(--mono); color: var(--ink); background: var(--ground); border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+code { font: 400 0.92em var(--mono); }
+.refs { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
+footer { grid-column: 1 / -1; border-top: 1px solid var(--hair); padding-top: 18px; color: var(--muted); font-size: 13px; }
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--hair); box-shadow: 0 6px 24px rgba(0,0,0,.14); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; max-width: 300px; }
+.tip b { font-weight: 600; }
+.tip .k { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+.tip .k span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip .k span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+@media (max-width: 1080px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  nav.toc { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .grid2, .method { grid-template-columns: minmax(0, 1fr); }
+  .tiles.t5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tiles.t5 .tile:nth-child(-n+2) { grid-column: span 3; }
+  .tiles.t5 .tile:nth-child(n+3) { grid-column: span 2; }
+  .tiles.t4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .wrap { padding-inline: 16px; }
+  .panel { padding: 14px 12px 12px; }
+  .tile .value { font-size: 24px; }
+  .tiles.t5, .tiles.t4 { grid-template-columns: minmax(0, 1fr); }
+  .tiles.t5 .tile:nth-child(n) { grid-column: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">mcrisk · Monte Carlo risk engine</span>
+      <h1>Capital, market and counterparty risk from one simulation engine</h1>
+      <p>Portfolio credit (economic capital, Euler allocation), market risk under FRTB (liquidity-adjusted Expected Shortfall, backtesting) and counterparty exposure with CVA. Every figure below comes from <code>python -m mcrisk.report</code> and is reproducible from its seeds.</p>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#overview">Overview</a>
+    <a href="#validation">Validation</a>
+    <a href="#credit">Credit portfolio</a>
+    <a href="#market">Market risk</a>
+    <a href="#ccr">Counterparty &amp; CVA</a>
+    <a href="#performance">Performance</a>
+    <a href="#method">Methods</a>
+  </nav>
+
+  <main>
+    <section id="overview">
+      <div class="sec-head"><span class="eyebrow">Overview</span><h2>Headline numbers</h2></div>
+      <div class="tiles t5" id="tiles"></div>
+      <div class="panel"><h3>What the runs show</h3><ul class="findings" id="findings"></ul></div>
+    </section>
+
+    <section id="validation">
+      <div class="sec-head"><span class="eyebrow">Model validation</span><h2>Every engine is checked against a closed form</h2>
+        <p class="lede">Each Monte Carlo estimate is compared with an exact or semi-analytic reference. The z-score is the gap in units of the estimate's own standard error, so values within ±2 are what an unbiased estimator produces 95% of the time.</p></div>
+      <div class="panel"><div class="tbl-wrap" id="val-table"></div></div>
+    </section>
+
+    <section id="credit">
+      <div class="sec-head"><span class="eyebrow">Portfolio credit risk</span><h2>Loss distribution of a 2,000-name corporate book</h2>
+        <p class="lede">A multi-factor structural model (11 sector and 4 region factors on a global cycle) with Basel IRB asset correlations. Economic capital is VaR minus expected loss at 99.9%, allocated to obligors by Euler's rule on Expected Shortfall.</p></div>
+      <ul class="facts" id="credit-facts"></ul>
+      <div class="panel">
+        <h3>One-year loss distribution</h3>
+        <p class="sub">Share of simulated scenarios per loss bucket (EUR m). The Basel ASRF quantile assumes one factor and infinite granularity.</p>
+        <div class="chart-host" id="ch-hist"></div>
+        <div class="legend" id="lg-hist"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Loss exceedance curve</h3>
+          <p class="sub">Probability that the annual loss exceeds each level (log scale).</p>
+          <div class="chart-host" id="ch-tail"></div>
+        </div>
+        <div class="panel">
+          <h3>Importance sampling vs plain Monte Carlo</h3>
+          <p class="sub">Relative standard error of ES 99.9% as scenarios grow (log-log).</p>
+          <div class="chart-host" id="ch-conv"></div>
+          <div class="legend" id="lg-conv"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Model risk: dependence and loss severity</h3>
+        <p class="sub">Same portfolio and PDs; only the copula or the LGD model changes. EUR m, ± one standard error.</p>
+        <div class="tbl-wrap" id="credit-models"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Where the tail risk sits, by sector</h3>
+          <p class="sub">Share of exposure vs share of ES 99.97% (Euler contributions).</p>
+          <div class="chart-host" id="ch-sector"></div>
+          <div class="legend" id="lg-sector"></div>
+        </div>
+        <div class="panel">
+          <h3>Stress scenarios</h3>
+          <p class="sub">Factor levels fixed; the other factors are drawn from their conditional Gaussian law. EUR m.</p>
+          <div class="tbl-wrap" id="credit-stress"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Largest contributors to ES 99.97%</h3>
+        <p class="sub">Name concentration: a few large, low-rated exposures carry a disproportionate share of capital, which the portfolio-invariant IRB charge cannot see.</p>
+        <div class="tbl-wrap" id="credit-top"></div>
+      </div>
+    </section>
+
+    <section id="market">
+      <div class="sec-head"><span class="eyebrow">Market risk · FRTB IMA</span><h2>A EUR trading book under four scenario models</h2>
+        <p class="lede">Sixteen risk factors (equity, FX, rates, credit spreads, implied volatility) and full revaluation of cash equity, options and bonds. The 10-day ES at 97.5% is liquidity-adjusted with the FRTB cascade and aggregated into the IMCC.</p></div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>10-day risk by scenario model</h3>
+          <p class="sub">Same book, same 500-day window. EUR m.</p>
+          <div class="chart-host" id="ch-mkt"></div>
+          <div class="legend" id="lg-mkt"></div>
+        </div>
+        <div class="panel">
+          <h3>FRTB capital build-up</h3>
+          <p class="sub">GARCH-filtered scenarios. EUR m.</p>
+          <div class="tbl-wrap" id="frtb-table"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="row">
+          <div><h3>Out-of-sample backtest, 1-day VaR 99%</h3><p class="sub" style="margin:4px 0 0">1,920 trading days including two crisis regimes (shaded). Dots mark the days the selected model was breached.</p></div>
+          <div class="seg" id="bt-seg" role="group" aria-label="VaR model"></div>
+        </div>
+        <div class="chart-host" id="ch-bt"></div>
+        <div class="legend" id="lg-bt"></div>
+        <div class="tbl-wrap" id="bt-table"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>ES contribution by desk</h3>
+          <p class="sub">Euler allocation of the 10-day ES 97.5%. Negative = the desk hedges the tail.</p>
+          <div class="chart-host" id="ch-desk"></div>
+        </div>
+        <div class="panel">
+          <h3>Sensitivity approximations</h3>
+          <p class="sub">ES 97.5% of the same scenarios, EUR m. The book is short equity puts, so delta-only misses the convexity.</p>
+          <div class="tbl-wrap" id="approx-table"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ccr">
+      <div class="sec-head"><span class="eyebrow">Counterparty credit risk · XVA</span><h2>Exposure of a swap netting set under Hull-White</h2>
+        <p class="lede">Six EUR interest rate swaps with one corporate counterparty, including seasoned and forward-starting trades. Rates follow a one-factor Hull-White model fitted exactly to the curve and simulated without discretisation error.</p></div>
+      <div class="tiles t4" id="ccr-tiles"></div>
+      <div class="panel">
+        <h3>Exposure profiles</h3>
+        <p class="sub">Expected exposure and 97.5% potential future exposure, with and without a CSA (EUR 10m thresholds, 10-day margin period of risk). EUR m.</p>
+        <div class="chart-host" id="ch-exp"></div>
+        <div class="legend" id="lg-exp"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Wrong-way risk</h3>
+          <p class="sub">CVA when the counterparty's hazard rate rises with our exposure: λ(t) = exp(a(t) + b·Z(t)), with a(t) recalibrated to the same CDS curve.</p>
+          <div class="chart-host" id="ch-wwr"></div>
+        </div>
+        <div class="panel">
+          <h3>Collateral and regulatory exposure</h3>
+          <p class="sub">EUR m. EAD under IMM = 1.4 × EEPE.</p>
+          <div class="tbl-wrap" id="ccr-metrics"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Trades in the netting set</h3>
+        <div class="tbl-wrap" id="ccr-trades"></div>
+      </div>
+    </section>
+
+    <section id="performance">
+      <div class="sec-head"><span class="eyebrow">Performance</span><h2>Throughput of the credit engine</h2>
+        <p class="lede">The NumPy engine draws one latent variable per obligor and scenario. The C++ kernel samples defaults by exact Bernoulli thinning: a bound on each block's conditional PD, geometric skipping, then acceptance. Its cost grows with the number of defaults, not the number of obligors.</p></div>
+      <div class="panel">
+        <h3>Million obligor-scenarios per second</h3>
+        <p class="sub">Plain Monte Carlo, Gaussian copula, 10 threads (Apple M4). Higher is better.</p>
+        <div class="chart-host" id="ch-perf"></div>
+        <div class="legend" id="lg-perf"></div>
+        <div class="tbl-wrap" id="perf-table"></div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="sec-head"><span class="eyebrow">Methods</span><h2>Models and estimators</h2></div>
+      <div class="method">
+        <div class="panel"><h3>Credit: multi-factor copula</h3>
+          <pre class="f">X_i = b_i·F + √(1−R_i) ε_i,   F ~ N(0, Σ_F)
+default_i ⇔ X_i < Φ⁻¹(PD_i)
+t-copula: X_i · √(ν/W),  W ~ χ²_ν</pre>
+          <p>Beta LGD correlated with the obligor's systematic factor gives downturn severity. Stress tests condition a subset of factors and draw the rest from N(Σ_RS Σ_SS⁻¹ y, Σ_RR − Σ_RS Σ_SS⁻¹ Σ_SR).</p></div>
+        <div class="panel"><h3>Importance sampling</h3>
+          <pre class="f">Z ~ N(μ, I),  μ = argmax  −θ(z)x + ψ(θ(z), z) − |z|²/2
+q_i = p_i e^{θc_i} / (1 − p_i + p_i e^{θc_i}),  ψ'(θ) = x
+w = f / (λf + (1−λ)h)     (defensive mixture)</pre>
+          <p>Glasserman &amp; Li (2005) mean shift and exponential twisting; θ solved row-wise by Newton on log ψ′. A 10% defensive share bounds the weights by 10 so the body of the distribution stays exact.</p></div>
+        <div class="panel"><h3>Risk measures and allocation</h3>
+          <pre class="f">VaR_α = inf{x : P(L > x) ≤ 1 − α}
+ES_α  = VaR_α + E[(L − VaR_α)⁺] / (1 − α)
+RC_i  = E[L_i | L ≥ VaR_α]     Σ RC_i = E[L | L ≥ VaR_α]</pre>
+          <p>Weighted estimators serve plain MC and IS alike; standard errors by batch means. Euler contributions replay each chunk's random stream exactly in a second pass.</p></div>
+        <div class="panel"><h3>FRTB Expected Shortfall</h3>
+          <pre class="f">ES = √( ES_T(P)² + Σ_{j≥2} (ES_T(P,j) √((LH_j − LH_{j−1})/T))² )
+IMCC = ½ ES_total + ½ Σ_classes ES_class</pre>
+          <p>Filtered historical simulation: GARCH(1,1) by QMLE with variance targeting, bootstrap of standardised residual vectors, volatility propagated path-wise over 10 days. Backtests: Kupiec POF, Christoffersen independence, Basel traffic light.</p></div>
+        <div class="panel"><h3>Hull-White and exposure</h3>
+          <pre class="f">r = x + φ(t),  dx = −a x dt + σ dW
+P(t,T) = P(0,T)/P(0,t) · exp(½[V(t,T) − V(0,T) + V(0,t)] − B(t,T)x)
+D(0,t) = P(0,t) · exp(−∫x − ½V(0,t))</pre>
+          <p>(x, ∫x) is simulated jointly and exactly. Collateral at t reflects V(t − MPoR) net of thresholds; CVA = (1−R) Σ E[D·E⁺] ΔPD, with wrong-way risk through a calibrated stochastic intensity (Hull &amp; White, 2012).</p></div>
+        <div class="panel"><h3>Pricing library</h3>
+          <pre class="f">Heston: QE scheme (Andersen 2008) + martingale correction
+        vs Gil-Pelaez inversion ("little trap" CF)
+Asian:  Sobol + Brownian bridge + geometric control variate
+American: Longstaff-Schwartz, out-of-sample exercise rule</pre>
+          <p>The same variance-reduction toolkit (antithetic, control variates, randomised QMC) is used across engines and validated against closed forms.</p></div>
+      </div>
+      <div class="panel"><h3>References</h3>
+        <ol class="refs">
+          <li>Glasserman, P. &amp; Li, J. (2005). Importance sampling for portfolio credit risk. <i>Management Science</i> 51(11).</li>
+          <li>Tasche, D. (2008). Capital allocation to business units and sub-portfolios: the Euler principle.</li>
+          <li>BCBS (2005). An explanatory note on the Basel II IRB risk weight functions. BCBS (2019). Minimum capital requirements for market risk (MAR33).</li>
+          <li>Barone-Adesi, G., Giannopoulos, K. &amp; Vosper, L. (1999). VaR without correlations for portfolios of derivative securities.</li>
+          <li>Andersen, L. (2008). Simple and efficient simulation of the Heston stochastic volatility model.</li>
+          <li>Brigo, D. &amp; Mercurio, F. (2006). <i>Interest Rate Models: Theory and Practice</i>. Hull, J. &amp; White, A. (2012). CVA and wrong-way risk.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer>Portfolios, trading book and market history are synthetic: generated from documented processes with known parameters so that every model can be tested against the truth. No client or vendor data is used.</footer>
+</div>
+<div class="tip" id="tip" role="status" hidden></div>
+
+<script type="application/json" id="data">/*__DATA__*/{}</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById("data").textContent);
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (s) => document.querySelector(s);
+
+  // ---------------------------------------------------------------- utils
+  function svg(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+  const fmt = (x, d = 1) => (x == null || !isFinite(x)) ? "-" :
+    Number(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pct = (x, d = 1) => fmt(100 * x, d) + "%";
+  function sig(x, s = 4) {
+    if (x === 0) return "0";
+    const a = Math.abs(x);
+    if (a >= 1e4) return fmt(x, 0);
+    if (a < 1e-3) return x.toExponential(s - 1).replace("e", "e");
+    return fmt(x, Math.max(0, s - 1 - Math.floor(Math.log10(a))));
+  }
+  function ticks(lo, hi, n) {
+    const span = hi - lo || 1;
+    let step = Math.pow(10, Math.floor(Math.log10(span / n)));
+    const err = (n / span) * step;
+    if (err <= 0.15) step *= 10; else if (err <= 0.35) step *= 5; else if (err <= 0.75) step *= 2;
+    const out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+  function logTicks(lo, hi) {
+    const out = [];
+    for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
+      const v = Math.pow(10, e);
+      if (v >= lo * 0.999 && v <= hi * 1.001) out.push(v);
+    }
+    return out;
+  }
+  const expLabel = (v) => {
+    const e = Math.round(Math.log10(v));
+    if (e >= 0 && e <= 6) return fmt(v, 0);
+    if (e < 0 && e >= -2) return String(v);
+    return "1e" + e;
+  };
+
+  // ---------------------------------------------------------------- tooltip
+  const tip = $("#tip");
+  function showTip(ev, html) {
+    tip.innerHTML = html;
+    tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    let x = ev.clientX + 14, y = ev.clientY + 14;
+    if (x + r.width > window.innerWidth - 8) x = ev.clientX - r.width - 14;
+    if (y + r.height > window.innerHeight - 8) y = ev.clientY - r.height - 14;
+    tip.style.left = Math.max(8, x) + "px";
+    tip.style.top = Math.max(8, y) + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+  const tipRow = (color, name, value) =>
+    `<div class="k"><span>${color ? `<i style="background:${color}"></i>` : ""}${esc(name)}</span><span>${value}</span></div>`;
+
+  // ---------------------------------------------------------------- registry
+  const renders = [];
+  function chart(host, fn) { const run = () => fn(host); renders.push(run); run(); }
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => renders.forEach((f) => f()), 120); });
+
+  function legend(host, items) {
+    host.innerHTML = items.map((it) =>
+      `<span><i class="${it.kind || ""}" style="${it.kind === "dash" ? `border-color:${it.color}` : `background:${it.color}`}"></i>${esc(it.name)}</span>`).join("");
+  }
+
+  // ---------------------------------------------------------------- line chart
+  function lineChart(host, o) {
+    host.innerHTML = "";
+    const W = Math.max(280, host.clientWidth), H = o.height || 300;
+    const m = { l: o.ml || 54, r: 18, t: 14, b: 40 };
+    const xs = o.x;
+    const all = [];
+    o.series.forEach((s) => s.y.forEach((v) => { if (v != null && isFinite(v)) all.push(v); }));
+    if (o.bars) o.bars.y.forEach((v) => all.push(v));
+    let y0 = o.yMin != null ? o.yMin : Math.min(...all), y1 = o.yMax != null ? o.yMax : Math.max(...all);
+    if (o.zero && !o.yLog) { y0 = Math.min(0, y0); y1 = Math.max(0, y1); }
+    if (!o.yLog) { const pad = (y1 - y0) * 0.06; y1 += pad; if (y0 < 0) y0 -= pad; }
+    const x0 = o.xMin != null ? o.xMin : Math.min(...xs), x1 = o.xMax != null ? o.xMax : Math.max(...xs);
+    const tx = o.xLog ? Math.log10 : (v) => v, ty = o.yLog ? Math.log10 : (v) => v;
+    const sx = (v) => m.l + ((tx(v) - tx(x0)) / (tx(x1) - tx(x0))) * (W - m.l - m.r);
+    const sy = (v) => H - m.b - ((ty(v) - ty(y0)) / (ty(y1) - ty(y0))) * (H - m.t - m.b);
+    const g = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": o.aria || "" }, host);
+    (o.bands || []).forEach((b) => {
+      svg("rect", { x: sx(b.x0), y: m.t, width: Math.max(1, sx(b.x1) - sx(b.x0)), height: H - m.t - m.b, style: "fill:var(--band)" }, g);
+      if (b.label) svg("text", { x: sx(b.x0) + 4, y: m.t + 12 }, g).textContent = b.label;
+    });
+    const yt = o.yLog ? logTicks(y0, y1) : ticks(y0, y1, o.yTicks || 5);
+    yt.forEach((v) => {
+      svg("line", { x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), style: `stroke:var(${v === 0 ? "--axis" : "--hair"});stroke-width:1` }, g);
+      const t = svg("text", { x: m.l - 8, y: sy(v) + 4, "text-anchor": "end" }, g);
+      t.textContent = o.yFmt ? o.yFmt(v) : (o.yLog ? expLabel(v) : fmt(v, 0));
+    });
+    const xt = o.xLog ? logTicks(x0, x1) : ticks(x0, x1, Math.max(3, Math.floor((W - m.l) / 90)));
+    xt.forEach((v) => {
+      const t = svg("text", { x: sx(v), y: H - m.b + 18, "text-anchor": "middle" }, g);
+      t.textContent = o.xFmt ? o.xFmt(v) : (o.xLog ? expLabel(v) : fmt(v, 0));
+    });
+    svg("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, style: "stroke:var(--axis);stroke-width:1" }, g);
+    if (o.xLabel) svg("text", { x: W - m.r, y: H - 6, "text-anchor": "end" }, g).textContent = o.xLabel;
+    if (o.yLabel) svg("text", { x: m.l, y: m.t - 2 }, g).textContent = o.yLabel;
+    if (o.bars) {
+      let d = "";
+      const zy = sy(0);
+      o.bars.y.forEach((v, i) => { const px = sx(xs[i]).toFixed(1); d += `M${px} ${zy.toFixed(1)}V${sy(v).toFixed(1)}`; });
+      svg("path", { d, style: `stroke:${o.bars.color};stroke-width:1;fill:none` }, g);
+    }
+    o.series.forEach((s) => {
+      let d = "", pen = false;
+      s.y.forEach((v, i) => {
+        if (v == null || !isFinite(v)) { pen = false; return; }
+        d += (pen ? "L" : "M") + sx(xs[i]).toFixed(1) + " " + sy(v).toFixed(1);
+        pen = true;
+      });
+      svg("path", { d, style: `fill:none;stroke:${s.color};stroke-width:${s.width || 2};stroke-linejoin:round;stroke-linecap:round;${s.dash ? "stroke-dasharray:5 4;" : ""}${s.opacity ? `opacity:${s.opacity};` : ""}` }, g);
+      if (s.markers) s.y.forEach((v, i) => {
+        if (v != null) svg("circle", { cx: sx(xs[i]), cy: sy(v), r: 4, style: `fill:${s.color};stroke:var(--surface);stroke-width:2` }, g);
+      });
+      if (s.endLabel) {
+        const i = s.y.length - 1;
+        const t = svg("text", { x: sx(xs[i]) - 6, y: sy(s.y[i]) - 9, "text-anchor": "end", class: "val" }, g);
+        t.textContent = s.endLabel;
+      }
+    });
+    (o.points || []).forEach((p) => {
+      svg("circle", { cx: sx(xs[p.i]), cy: sy(p.y), r: 4, style: `fill:${p.color};stroke:var(--surface);stroke-width:2` }, g);
+    });
+    (o.vlines || []).forEach((v) => {
+      svg("line", { x1: sx(v.x), x2: sx(v.x), y1: m.t, y2: H - m.b, style: "stroke:var(--axis);stroke-width:1" }, g);
+    });
+    // hover layer
+    const cross = svg("line", { y1: m.t, y2: H - m.b, style: "stroke:var(--muted);stroke-width:1;visibility:hidden" }, g);
+    const dots = o.series.map((s) => svg("circle", { r: 4, style: `fill:${s.color};stroke:var(--surface);stroke-width:2;visibility:hidden` }, g));
+    const px = xs.map(sx);
+    const hit = svg("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, style: "fill:transparent" }, g);
+    function nearest(clientX) {
+      const r = g.getBoundingClientRect();
+      const x = ((clientX - r.left) / r.width) * W;
+      let lo = 0, hi = px.length - 1;
+      while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (px[mid] < x) lo = mid; else hi = mid; }
+      return Math.abs(px[lo] - x) < Math.abs(px[hi] - x) ? lo : hi;
+    }
+    hit.addEventListener("pointermove", (ev) => {
+      const i = nearest(ev.clientX);
+      cross.setAttribute("x1", px[i]); cross.setAttribute("x2", px[i]); cross.style.visibility = "visible";
+      let html = `<b>${esc(o.tipX ? o.tipX(xs[i]) : xs[i])}</b>`;
+      if (o.bars) html += tipRow(o.bars.color, o.bars.name, o.bars.fmt(o.bars.y[i]));
+      o.series.forEach((s, k) => {
+        const v = s.y[i];
+        if (v == null) { dots[k].style.visibility = "hidden"; return; }
+        dots[k].setAttribute("cx", px[i]); dots[k].setAttribute("cy", sy(v)); dots[k].style.visibility = "visible";
+        html += tipRow(s.color, s.name, (s.fmt || o.tipFmt || ((z) => sig(z)))(v));
+      });
+      if (o.tipExtra) html += o.tipExtra(i);
+      showTip(ev, html);
+    });
+    hit.addEventListener("pointerleave", () => { cross.style.visibility = "hidden"; dots.forEach((d) => (d.style.visibility = "hidden")); hideTip(); });
+  }
+
+  // ---------------------------------------------------------------- bars
+  function barPath(xa, xb, y, h, r) {
+    const right = xb >= xa, w = Math.abs(xb - xa);
+    r = Math.min(r, w, h / 2);
+    if (right) return `M${xa} ${y}H${xb - r}Q${xb} ${y} ${xb} ${y + r}V${y + h - r}Q${xb} ${y + h} ${xb - r} ${y + h}H${xa}Z`;
+    return `M${xa} ${y}H${xb + r}Q${xb} ${y} ${xb} ${y + r}V${y + h - r}Q${xb} ${y + h} ${xb + r} ${y + h}H${xa}Z`;
+  }
+  function barChart(host, o) {
+    host.innerHTML = "";
+    const W = Math.max(280, host.clientWidth);
+    const labelW = Math.min(o.labelW || 150, W * 0.38);
+    const ns = o.series.length, bh = o.barH || 12, gap = 3, groupPad = 12;
+    const groupH = ns * bh + (ns - 1) * gap;
+    const H = 16 + o.cats.length * (groupH + groupPad) + 26;
+    const m = { l: labelW + 10, r: o.labelValues ? 64 : 18, t: 10, b: 26 };
+    const vals = o.series.flatMap((s) => s.values);
+    let v0 = Math.min(0, ...vals), v1 = Math.max(0, ...vals);
+    const pad = (v1 - v0) * 0.04; v1 += v1 > 0 ? pad : 0; v0 -= v0 < 0 ? pad : 0;
+    const sx = (v) => m.l + ((v - v0) / (v1 - v0)) * (W - m.l - m.r);
+    const g = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": o.aria || "" }, host);
+    ticks(v0, v1, Math.max(3, Math.floor((W - m.l) / 90))).forEach((v) => {
+      svg("line", { x1: sx(v), x2: sx(v), y1: m.t, y2: H - m.b, style: `stroke:var(${v === 0 ? "--axis" : "--hair"});stroke-width:1` }, g);
+      svg("text", { x: sx(v), y: H - m.b + 16, "text-anchor": "middle" }, g).textContent = o.tickFmt ? o.tickFmt(v) : fmt(v, 0);
+    });
+    o.cats.forEach((c, ci) => {
+      const gy = m.t + ci * (groupH + groupPad) + groupPad / 2;
+      const lt = svg("text", { x: labelW, y: gy + groupH / 2 + 4, "text-anchor": "end", class: "lbl" }, g);
+      lt.textContent = c;
+      o.series.forEach((s, si) => {
+        const v = s.values[ci], y = gy + si * (bh + gap);
+        const p = svg("path", { d: barPath(sx(0), sx(v), y, bh, 4), style: `fill:${s.color}` }, g);
+        if (o.labelValues) {
+          const t = svg("text", { x: v >= 0 ? sx(v) + 6 : sx(v) - 6, y: y + bh / 2 + 4, "text-anchor": v >= 0 ? "start" : "end", class: "val" }, g);
+          t.textContent = o.fmt(v);
+        }
+        const hitR = svg("rect", { x: m.l, y: y - gap / 2, width: W - m.l - m.r, height: bh + gap, style: "fill:transparent" }, g);
+        const show = (ev) => {
+          let html = `<b>${esc(c)}</b>`;
+          o.series.forEach((q) => { html += tipRow(q.color, q.name, o.fmt(q.values[ci])); });
+          if (o.tipExtra) html += o.tipExtra(ci);
+          showTip(ev, html);
+        };
+        hitR.addEventListener("pointermove", show);
+        hitR.addEventListener("pointerleave", hideTip);
+        p.addEventListener("pointermove", show);
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------- histogram
+  function histogram(host, o) {
+    host.innerHTML = "";
+    const W = Math.max(280, host.clientWidth), H = o.height || 300;
+    const m = { l: 54, r: 18, t: 46, b: 40 };
+    const e = o.edges, c = o.counts, tot = c.reduce((a, b) => a + b, 0);
+    const share = c.map((v) => v / tot);
+    const x0 = e[0], x1 = e[e.length - 1];
+    const y1 = Math.max(...share) * 1.05;
+    const sx = (v) => m.l + ((v - x0) / (x1 - x0)) * (W - m.l - m.r);
+    const sy = (v) => H - m.b - (v / y1) * (H - m.t - m.b);
+    const g = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": o.aria || "" }, host);
+    ticks(0, y1, 4).forEach((v) => {
+      svg("line", { x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), style: `stroke:var(${v === 0 ? "--axis" : "--hair"});stroke-width:1` }, g);
+      svg("text", { x: m.l - 8, y: sy(v) + 4, "text-anchor": "end" }, g).textContent = pct(v, 1);
+    });
+    ticks(x0, x1, Math.max(3, Math.floor((W - m.l) / 90))).forEach((v) => {
+      svg("text", { x: sx(v), y: H - m.b + 18, "text-anchor": "middle" }, g).textContent = fmt(v, 0);
+    });
+    svg("text", { x: W - m.r, y: H - 6, "text-anchor": "end" }, g).textContent = "annual loss, EUR m";
+    const bw = (W - m.l - m.r) / c.length;
+    share.forEach((v, i) => {
+      const x = sx(e[i]);
+      const r = svg("rect", { x: x + 0.5, y: sy(v), width: Math.max(0.5, bw - 1), height: Math.max(0, H - m.b - sy(v)), style: `fill:${o.color}` }, g);
+      const hr = svg("rect", { x, y: m.t, width: bw, height: H - m.t - m.b, style: "fill:transparent" }, g);
+      const show = (ev) => showTip(ev, `<b>EUR ${fmt(e[i], 0)} to ${fmt(e[i + 1], 0)} m</b>` + tipRow(o.color, "Share of scenarios", pct(v, 3)));
+      hr.addEventListener("pointermove", show); hr.addEventListener("pointerleave", hideTip);
+      r.addEventListener("pointermove", show);
+    });
+    svg("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, style: "stroke:var(--axis);stroke-width:1" }, g);
+    // markers with collision-free label rows
+    const rows = [];
+    o.markers.forEach((mk) => {
+      const x = sx(mk.x);
+      const label = `${mk.label} ${fmt(mk.x, 0)}`;
+      const w = label.length * 6.4 + 8;
+      let row = 0;
+      while (rows[row] != null && rows[row] > x - 4) row++;
+      rows[row] = x + w;
+      const y = 14 + row * 15;
+      svg("line", { x1: x, x2: x, y1: y + 4, y2: H - m.b, style: `stroke:${mk.color};stroke-width:${mk.width || 1.5};${mk.dash ? "stroke-dasharray:4 3" : ""}` }, g);
+      const anchorEnd = x + w > W - m.r;
+      svg("text", { x: anchorEnd ? x - 4 : x + 4, y: y + 3, "text-anchor": anchorEnd ? "end" : "start", class: "mk" }, g).textContent = label;
+    });
+  }
+
+  // ---------------------------------------------------------------- tables
+  function table(host, cols, rows, opt = {}) {
+    const th = cols.map((c) => `<th class="${c.num ? "num" : ""}" scope="col">${esc(c.h)}</th>`).join("");
+    const tr = rows.map((r, i) => `<tr class="${opt.em && opt.em(r, i) ? "em" : ""}">` +
+      cols.map((c) => `<td class="${c.num ? "num" : ""}">${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("") + "</tr>").join("");
+    host.innerHTML = `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
+  }
+  const pm = (v, se, d = 1) => `${fmt(v, d)} <span style="color:var(--muted)">± ${fmt(se, d)}</span>`;
+  function zPill(z) {
+    const a = Math.abs(z);
+    if (a < 2) return `<span class="pill good">✓ within 2σ</span>`;
+    if (a < 3) return `<span class="pill warn">! within 3σ</span>`;
+    return `<span class="pill crit">✗ ${fmt(a, 1)}σ</span>`;
+  }
+
+  // ================================================================ content
+  const C = D.credit, MK = D.market, X = D.ccr, V = D.validation, B = D.benchmarks || [];
+  const base = C.models[0];
+  const conv = C.convergence[C.convergence.length - 1];
+  const vr = Math.pow(conv.plain_rel_se / conv.is_rel_se, 2);
+  const wwr1 = X.xva.wwr.find((w) => w.b === 1.0), wwr0 = X.xva.wwr.find((w) => w.b === 0);
+  const unc = X.metrics[0], csa = X.metrics[1], im = X.metrics[2];
+  const bt = Object.fromEntries(MK.backtest.reports.map((r) => [r.model, r]));
+  const maxZ = Math.max(...V.map((v) => Math.abs(v.z)));
+
+  $("#meta").innerHTML = [
+    `${fmt(C.run.scenarios, 0)} credit scenarios`,
+    `${D.meta.threads} threads`,
+    `native kernel ${D.meta.native_kernel ? "on" : "off"}`,
+    `full run ${fmt(D.meta.seconds, 0)} s`,
+  ].map((s) => `<span class="chip">${esc(s)}</span>`).join("");
+
+  const tiles = [
+    ["Credit economic capital, 99.9%", `${fmt(base["EC_0.999"], 0)}<small>EUR m</small>`, `VaR ${fmt(base["VaR_0.999"], 0)} m less EL ${fmt(base.EL, 0)} m`],
+    ["FRTB IMCC", `${fmt(MK.frtb.imcc_m, 1)}<small>EUR m</small>`, `liquidity-adjusted ES ${fmt(MK.frtb.es_liquidity_adjusted_m, 1)} m`],
+    ["CVA, uncollateralised", `${fmt(X.xva.cva_m, 2)}<small>EUR m</small>`, `${fmt(X.xva.cva_csa_m, 2)} m under CSA · ${fmt(100 * (wwr1.cva / wwr0.cva - 1), 0)}% more with wrong-way risk (b = 1)`],
+    ["Validation checks", `${V.filter((v) => Math.abs(v.z) < 3).length} / ${V.length}`, `largest gap ${fmt(maxZ, 2)} standard errors`],
+    ["Importance sampling gain", `${fmt(vr, 0)}×`, `variance reduction on ES 99.9% at ${fmt(conv.n, 0)} scenarios`],
+  ];
+  $("#tiles").innerHTML = tiles.map(([l, v, n]) => `<div class="tile"><span class="label">${esc(l)}</span><span class="value">${v}</span><span class="note">${esc(n)}</span></div>`).join("");
+
+  const tModel = C.models[1], lModel = C.models[2];
+  const findings = [
+    `The multi-factor VaR at 99.9% (EUR ${fmt(base["VaR_0.999"], 0)} m) sits ${fmt(100 * (1 - base["VaR_0.999"] / C.irb.asrf_var_m), 0)}% below the Basel single-factor quantile (EUR ${fmt(C.irb.asrf_var_m, 0)} m): sector and region diversification outweighs the name concentration of a book with ${fmt(C.portfolio.effective_names, 0)} effective names.`,
+    `Dependence is the dominant model risk: a Student-t copula with the same PDs and correlations multiplies VaR 99.9% by ${fmt(tModel["VaR_0.999"] / base["VaR_0.999"], 1)}, while downturn LGD adds ${fmt(100 * (lModel["VaR_0.999"] / base["VaR_0.999"] - 1), 0)}%.`,
+    `Only the GARCH-filtered model passes the Kupiec test out of sample (${bt.fhs.exceptions} exceptions for ${fmt(bt.fhs.expected, 1)} expected, p = ${fmt(bt.fhs.p_value, 2)}); historical simulation is breached ${bt.historical.exceptions} times, ${bt.historical.exceptions_in_crisis} of them in the crisis windows.`,
+    `A CSA with EUR 10m thresholds halves EEPE (EUR ${fmt(unc.eepe_m, 1)} m to ${fmt(csa.eepe_m, 1)} m); adding EUR 15m of initial margin brings it to ${fmt(im.eepe_m, 2)} m. Netting alone saves ${fmt(100 * (1 - X.netting.net_epe_m / X.netting.gross_epe_m), 0)}% of EPE.`,
+  ];
+  $("#findings").innerHTML = findings.map((f) => `<li>${esc(f)}</li>`).join("");
+
+  // ---- validation
+  table($("#val-table"), [
+    { h: "Test", k: "test" },
+    { h: "Reference", k: "model" },
+    { h: "Monte Carlo", num: 1, f: (r) => `${sig(r.mc, 5)} <span style="color:var(--muted)">± ${sig(r.stderr, 2)}</span>` },
+    { h: "Exact / benchmark", num: 1, f: (r) => sig(r.reference, 5) },
+    { h: "z", num: 1, f: (r) => (r.z >= 0 ? "+" : "") + fmt(r.z, 2) },
+    { h: "Result", f: (r) => zPill(r.z) },
+  ], V);
+
+  // ---- credit
+  $("#credit-facts").innerHTML = [
+    ["Exposure", `EUR ${fmt(C.portfolio.exposure_bn, 1)} bn`], ["Obligors", fmt(C.portfolio.obligors, 0)],
+    ["Expected loss", `EUR ${fmt(C.portfolio.expected_loss_m, 0)} m`], ["Largest name", `EUR ${fmt(C.portfolio.largest_exposure_m, 0)} m`],
+    ["Factors", C.portfolio.factors], ["IRB capital", `EUR ${fmt(C.irb.capital_m, 0)} m`],
+    ["Run", `${fmt(C.run.scenarios, 0)} scenarios in ${fmt(C.run.seconds, 1)} s (${C.run.backend})`],
+  ].map(([k, v]) => `<li>${esc(k)} <b>${esc(v)}</b></li>`).join("");
+
+  const mkHist = [
+    { x: base.EL, label: "EL", color: "var(--muted)" },
+    { x: base["VaR_0.999"], label: "VaR 99.9%", color: "var(--s2)", width: 2 },
+    { x: base["ES_0.999"], label: "ES 99.9%", color: "var(--s2)", dash: 1 },
+    { x: C.irb.asrf_var_m, label: "Basel ASRF", color: "var(--ink-2)", dash: 1 },
+  ];
+  chart($("#ch-hist"), (h) => histogram(h, { edges: C.histogram.edges, counts: C.histogram.counts, color: "var(--s1)", markers: mkHist, aria: "Histogram of simulated annual credit losses" }));
+  legend($("#lg-hist"), [{ name: "Scenarios", color: "var(--s1)", kind: "box" }, { name: "VaR 99.9%", color: "var(--s2)" }, { name: "ES 99.9%", color: "var(--s2)", kind: "dash" }, { name: "Basel ASRF quantile", color: "var(--ink-2)", kind: "dash" }]);
+
+  const tc = C.tail_curve.slice().sort((a, b) => a[1] - b[1]);
+  chart($("#ch-tail"), (h) => lineChart(h, {
+    x: tc.map((p) => p[1]), series: [{ name: "P(L > x)", color: "var(--s1)", y: tc.map((p) => p[0]), fmt: (v) => v < 1e-3 ? v.toExponential(2) : pct(v, 2) }],
+    yLog: true, height: 260, xLabel: "loss, EUR m", yFmt: (v) => (100 * v).toLocaleString("en-US", { maximumSignificantDigits: 2 }) + "%", tipX: (x) => `Loss EUR ${fmt(x, 0)} m`, yLabel: "exceedance probability", ml: 50,
+    vlines: [{ x: base["VaR_0.999"] }], aria: "Loss exceedance curve",
+  }));
+  chart($("#ch-conv"), (h) => lineChart(h, {
+    x: C.convergence.map((c) => c.n), xLog: true, yLog: true, height: 260, ml: 50, yFmt: (v) => (100 * v).toLocaleString("en-US", { maximumSignificantDigits: 2 }) + "%",
+    series: [
+      { name: "Plain Monte Carlo", color: "var(--s1)", y: C.convergence.map((c) => c.plain_rel_se), markers: 1, fmt: (v) => pct(v, 2) },
+      { name: "Importance sampling", color: "var(--s2)", y: C.convergence.map((c) => c.is_rel_se), markers: 1, fmt: (v) => pct(v, 3) },
+    ],
+    xLabel: "scenarios", yLabel: "relative standard error", tipX: (x) => `${fmt(x, 0)} scenarios`,
+    yMin: Math.min(...C.convergence.map((c) => c.is_rel_se)) * 0.7, yMax: Math.max(...C.convergence.map((c) => c.plain_rel_se)) * 1.4,
+    aria: "Convergence of ES estimators",
+  }));
+  legend($("#lg-conv"), [{ name: "Plain Monte Carlo", color: "var(--s1)" }, { name: "Importance sampling (Glasserman-Li, defensive)", color: "var(--s2)" }]);
+
+  table($("#credit-models"), [
+    { h: "Model", k: "model" },
+    { h: "EL", num: 1, f: (r) => fmt(r.EL, 0) },
+    { h: "VaR 99%", num: 1, f: (r) => pm(r["VaR_0.99"], r["VaR_0.99_se"], 0) },
+    { h: "VaR 99.9%", num: 1, f: (r) => pm(r["VaR_0.999"], r["VaR_0.999_se"], 0) },
+    { h: "ES 99.9%", num: 1, f: (r) => pm(r["ES_0.999"], r["ES_0.999_se"], 0) },
+    { h: "VaR 99.97%", num: 1, f: (r) => pm(r["VaR_0.9997"], r["VaR_0.9997_se"], 0) },
+    { h: "Economic capital", num: 1, f: (r) => fmt(r["EC_0.999"], 0) },
+  ], C.models, { em: (r, i) => i === 0 });
+
+  const totEad = C.sectors.reduce((a, s) => a + s.ead, 0), totEs = C.sectors.reduce((a, s) => a + s.es_contrib, 0);
+  const sec = C.sectors.slice().sort((a, b) => b.es_contrib - a.es_contrib);
+  chart($("#ch-sector"), (h) => barChart(h, {
+    cats: sec.map((s) => s.sector), labelW: 120, barH: 9,
+    series: [
+      { name: "Share of exposure", color: "var(--s1)", values: sec.map((s) => s.ead / totEad) },
+      { name: "Share of ES 99.97%", color: "var(--s2)", values: sec.map((s) => s.es_contrib / totEs) },
+    ],
+    fmt: (v) => pct(v, 1), tickFmt: (v) => pct(v, 0),
+    tipExtra: (i) => tipRow(null, "ES contribution", `EUR ${fmt(sec[i].es_contrib, 0)} m`),
+    aria: "Sector share of exposure and ES",
+  }));
+  legend($("#lg-sector"), [{ name: "Share of exposure", color: "var(--s1)", kind: "box" }, { name: "Share of ES 99.97%", color: "var(--s2)", kind: "box" }]);
+
+  const sb = C.stress[0];
+  table($("#credit-stress"), [
+    { h: "Scenario", k: "scenario" },
+    { h: "EL", num: 1, f: (r) => fmt(r.EL, 0) },
+    { h: "VaR 99.9%", num: 1, f: (r) => fmt(r["VaR_0.999"], 0) },
+    { h: "EL vs base", num: 1, f: (r) => r === sb ? "-" : "×" + fmt(r.EL / sb.EL, 1) },
+  ], C.stress, { em: (r, i) => i === 0 });
+
+  table($("#credit-top"), [
+    { h: "Obligor", k: "name" }, { h: "Sector", k: "sector" }, { h: "Rating", k: "rating" },
+    { h: "EAD", num: 1, f: (r) => fmt(r.ead, 0) }, { h: "PD", num: 1, f: (r) => pct(r.pd, 2) },
+    { h: "LGD", num: 1, f: (r) => pct(r.lgd, 0) },
+    { h: "ES contribution", num: 1, f: (r) => fmt(r.es_contrib, 1) },
+    { h: "IRB capital", num: 1, f: (r) => fmt(r.irb_capital, 1) },
+    { h: "ES / IRB", num: 1, f: (r) => "×" + fmt(r.es_contrib / r.irb_capital, 1) },
+  ], C.top_contributors.slice(0, 10));
+
+  // ---- market
+  chart($("#ch-mkt"), (h) => barChart(h, {
+    cats: MK.models.map((r) => r.model), labelW: 170, labelValues: true,
+    series: [
+      { name: "VaR 99%", color: "var(--s1)", values: MK.models.map((r) => r.VaR_99) },
+      { name: "ES 97.5%", color: "var(--s2)", values: MK.models.map((r) => r.ES_975) },
+    ],
+    fmt: (v) => fmt(v, 1), aria: "VaR and ES by scenario model",
+    tipExtra: (i) => tipRow(null, "Scenarios", fmt(MK.models[i].scenarios, 0)),
+  }));
+  legend($("#lg-mkt"), [{ name: "VaR 99%", color: "var(--s1)", kind: "box" }, { name: "ES 97.5%", color: "var(--s2)", kind: "box" }]);
+
+  const F = MK.frtb;
+  const frtbRows = [
+    { k: "10-day ES 97.5%, all factors", v: F.es_10d_m },
+    ...Object.entries(F.es_by_bucket_m).filter(([b, v]) => b !== "10" && v > 0).map(([b, v]) => ({ k: `ES, factors with liquidity horizon ≥ ${b} days`, v })),
+    { k: "Liquidity-adjusted ES", v: F.es_liquidity_adjusted_m, em: 1 },
+    ...Object.entries(F.es_by_class_m).map(([c, v]) => ({ k: `Stand-alone ES, ${{ EQ: "equity", IR: "interest rates", FX: "FX", CS: "credit spread" }[c] || c}`, v })),
+    { k: `IMCC = ½ ES + ½ Σ classes (diversification ${pct(F.diversification, 0)})`, v: F.imcc_m, em: 1 },
+  ];
+  table($("#frtb-table"), [{ h: "Component", k: "k" }, { h: "EUR m", num: 1, f: (r) => fmt(r.v, 2) }], frtbRows, { em: (r) => r.em });
+
+  const MODELS = [["historical", "Historical simulation", "var(--s1)"], ["normal_ewma", "Normal EWMA", "var(--s2)"], ["fhs", "Filtered HS (GARCH)", "var(--s3)"]];
+  let btSel = "fhs";
+  const S = MK.backtest.series;
+  const crisisBands = [];
+  for (let i = 0; i < S.crisis.length; i++) {
+    if (S.crisis[i] && (i === 0 || !S.crisis[i - 1])) crisisBands.push({ x0: S.day[i], x1: S.day[i] });
+    if (S.crisis[i]) crisisBands[crisisBands.length - 1].x1 = S.day[i];
+  }
+  crisisBands.forEach((b) => (b.label = "crisis"));
+  const seg = $("#bt-seg");
+  seg.innerHTML = MODELS.map(([k, n]) => `<button type="button" id="bt-${k}" data-k="${k}" aria-pressed="${k === btSel}">${esc(n)}</button>`).join("");
+  function drawBt(h) {
+    const sel = MODELS.find((m) => m[0] === btSel);
+    const exc = [];
+    S.pnl.forEach((p, i) => { if (-p > S[btSel][i]) exc.push({ i, y: p, color: "var(--crit)" }); });
+    lineChart(h, {
+      x: S.day, height: 320, zero: true, bands: crisisBands,
+      bars: { y: S.pnl, color: "var(--pnl)", name: "Daily P&L", fmt: (v) => fmt(v, 2) },
+      series: MODELS.map(([k, n, c]) => ({ name: `−VaR ${n}`, color: c, y: S[k].map((v) => -v), width: k === btSel ? 2 : 1.25, opacity: k === btSel ? 1 : 0.45, fmt: (v) => fmt(v, 2) })),
+      points: exc, xLabel: "trading day", yLabel: "EUR m", tipX: (d) => `Day ${d}`, ml: 48,
+      tipExtra: (i) => (-S.pnl[i] > S[btSel][i] ? `<div class="k"><span>⚠ breach of ${esc(sel[1])}</span><span></span></div>` : ""),
+      aria: "Daily P&L against VaR forecasts",
+    });
+  }
+  chart($("#ch-bt"), drawBt);
+  seg.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button"); if (!b) return;
+    btSel = b.dataset.k;
+    seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.k === btSel));
+    drawBt($("#ch-bt"));
+  });
+  legend($("#lg-bt"), [{ name: "Daily P&L", color: "var(--pnl)", kind: "box" }, ...MODELS.map(([, n, c]) => ({ name: `−VaR, ${n}`, color: c })), { name: "Breach of the selected model", color: "var(--crit)", kind: "dot" }]);
+  const zone = (n) => n <= 4 ? `<span class="pill good">✓ green</span>` : n <= 9 ? `<span class="pill warn">! yellow</span>` : `<span class="pill crit">✗ red</span>`;
+  table($("#bt-table"), [
+    { h: "Model", f: (r) => esc(MODELS.find((m) => m[0] === r.model)[1]) },
+    { h: "Exceptions", num: 1, f: (r) => `${r.exceptions} <span style="color:var(--muted)">/ ${fmt(r.expected, 1)}</span>` },
+    { h: "In crisis", num: 1, f: (r) => r.exceptions_in_crisis },
+    { h: "Kupiec p", num: 1, f: (r) => fmt(r.p_value, 4) },
+    { h: "Christoffersen p (cc)", num: 1, f: (r) => fmt(r.p_cc, 4) },
+    { h: "Coverage at 5%", f: (r) => r.p_value > 0.05 ? `<span class="pill good">✓ not rejected</span>` : `<span class="pill crit">✗ rejected</span>` },
+    { h: "Worst 250 days", f: (r) => `${r.worst_250d_exceptions} ${zone(r.worst_250d_exceptions)}` },
+  ], MK.backtest.reports);
+
+  const desks = Object.entries(MK.desks).sort((a, b) => b[1] - a[1]);
+  chart($("#ch-desk"), (h) => barChart(h, {
+    cats: desks.map((d) => d[0]), labelW: 130, labelValues: true, barH: 14,
+    series: [{ name: "ES contribution", color: "var(--s1)", values: desks.map((d) => d[1]) }],
+    fmt: (v) => fmt(v, 1), aria: "ES contribution by desk",
+  }));
+  const ap = MK.approximations, full = ap["Full revaluation"];
+  table($("#approx-table"), [
+    { h: "Method", k: "k" }, { h: "ES 97.5%", num: 1, f: (r) => fmt(r.v, 2) },
+    { h: "Error", num: 1, f: (r) => r.k === "Full revaluation" ? "-" : (r.v >= full ? "+" : "") + pct(r.v / full - 1, 1) },
+  ], Object.entries(ap).map(([k, v]) => ({ k, v })));
+
+  // ---- counterparty
+  $("#ccr-tiles").innerHTML = [
+    ["CVA", `${fmt(X.xva.cva_m, 2)}<small>EUR m</small>`, `counterparty CDS ${fmt(X.xva.cpty_spread * 1e4, 0)} bp, recovery 40%`],
+    ["CVA under CSA", `${fmt(X.xva.cva_csa_m, 2)}<small>EUR m</small>`, "EUR 10m thresholds, 10-day MPoR"],
+    ["DVA", `${fmt(X.xva.dva_m, 2)}<small>EUR m</small>`, `own CDS ${fmt(X.xva.own_spread * 1e4, 0)} bp`],
+    ["Netting benefit", pct(1 - X.netting.net_epe_m / X.netting.gross_epe_m, 0), `EPE ${fmt(X.netting.net_epe_m, 1)} m netted vs ${fmt(X.netting.gross_epe_m, 1)} m gross`],
+  ].map(([l, v, n]) => `<div class="tile"><span class="label">${esc(l)}</span><span class="value">${v}</span><span class="note">${esc(n)}</span></div>`).join("");
+  const P = X.profiles;
+  chart($("#ch-exp"), (h) => lineChart(h, {
+    x: P.t, height: 300, zero: true, xLabel: "years", yLabel: "EUR m", tipX: (t) => `t = ${fmt(t, 2)} y`,
+    series: [
+      { name: "EE, no CSA", color: "var(--s1)", y: P.ee },
+      { name: "PFE 97.5%, no CSA", color: "var(--s1)", y: P.pfe, dash: 1 },
+      { name: "EE, CSA", color: "var(--s2)", y: P.ee_csa },
+      { name: "PFE 97.5%, CSA", color: "var(--s2)", y: P.pfe_csa, dash: 1 },
+    ],
+    tipFmt: (v) => fmt(v, 2), aria: "Exposure profiles",
+  }));
+  legend($("#lg-exp"), [
+    { name: "EE, uncollateralised", color: "var(--s1)" }, { name: "PFE 97.5%, uncollateralised", color: "var(--s1)", kind: "dash" },
+    { name: "EE, with CSA", color: "var(--s2)" }, { name: "PFE 97.5%, with CSA", color: "var(--s2)", kind: "dash" },
+  ]);
+  chart($("#ch-wwr"), (h) => lineChart(h, {
+    x: X.xva.wwr.map((w) => w.b), height: 250, zero: true, xLabel: "wrong-way coefficient b", yLabel: "CVA, EUR m",
+    series: [{ name: "CVA", color: "var(--s1)", y: X.xva.wwr.map((w) => w.cva), markers: 1, fmt: (v) => fmt(v, 2) }],
+    tipX: (b) => `b = ${fmt(b, 1)}${b < 0 ? " (right-way)" : b > 0 ? " (wrong-way)" : " (independent)"}`,
+    xFmt: (v) => fmt(v, 1), vlines: [{ x: 0 }],
+    tipExtra: (i) => tipRow(null, "Standard error", fmt(X.xva.wwr[i].stderr, 3)),
+    aria: "CVA as a function of wrong-way risk",
+  }));
+  table($("#ccr-metrics"), [
+    { h: "Set-up", k: "setup" }, { h: "EPE", num: 1, f: (r) => fmt(r.epe_m, 2) },
+    { h: "EEPE", num: 1, f: (r) => fmt(r.eepe_m, 2) }, { h: "EAD (IMM)", num: 1, f: (r) => fmt(r.ead_imm_m, 2) },
+    { h: "Peak PFE", num: 1, f: (r) => fmt(r.peak_pfe_m, 1) },
+  ], X.metrics);
+  table($("#ccr-trades"), [
+    { h: "Trade", k: "name" }, { h: "Notional", num: 1, f: (r) => fmt(r.notional_m, 0) },
+    { h: "Maturity (y)", num: 1, f: (r) => fmt(r.maturity, 2) }, { h: "Fixed rate", num: 1, f: (r) => pct(r.fixed_rate, 3) },
+    { h: "MtM today", num: 1, f: (r) => fmt(Math.abs(r.mtm_m) < 5e-4 ? 0 : r.mtm_m, 2) },
+    { h: "EPE contribution", num: 1, f: (r) => fmt(r.epe_contrib_m, 2) },
+  ], X.trades);
+
+  // ---- performance
+  if (B.length) {
+    const thr = (r, k) => (r.obligors * r.scenarios) / r[k] / 1e6;
+    chart($("#ch-perf"), (h) => barChart(h, {
+      cats: B.map((r) => `${fmt(r.obligors, 0)} obligors`), labelW: 120, labelValues: true,
+      series: [
+        { name: "NumPy (vectorised, BLAS)", color: "var(--s1)", values: B.map((r) => thr(r, "numpy_s")) },
+        { name: "C++ thinning kernel", color: "var(--s2)", values: B.map((r) => thr(r, "native_s")) },
+      ],
+      fmt: (v) => fmt(v, 0), aria: "Credit engine throughput",
+      tipExtra: (i) => tipRow(null, "Speed-up", "×" + fmt(B[i].speedup, 1)),
+    }));
+    legend($("#lg-perf"), [{ name: "NumPy (vectorised, BLAS)", color: "var(--s1)", kind: "box" }, { name: "C++ thinning kernel", color: "var(--s2)", kind: "box" }]);
+    table($("#perf-table"), [
+      { h: "Obligors", num: 1, f: (r) => fmt(r.obligors, 0) }, { h: "Scenarios", num: 1, f: (r) => fmt(r.scenarios, 0) },
+      { h: "NumPy (s)", num: 1, f: (r) => fmt(r.numpy_s, 2) }, { h: "C++ (s)", num: 1, f: (r) => fmt(r.native_s, 2) },
+      { h: "Speed-up", num: 1, f: (r) => "×" + fmt(r.speedup, 1) },
+    ], B);
+  }
+})();
+</script>
