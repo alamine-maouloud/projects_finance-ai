@@ -1,0 +1,14 @@
+[project]
+name = "risklens"
+version = "1.0.0"
+description = "Risque de taux d'une poche obligataire publiée : VaR, ES, contributions, stress et contrôles."
+requires-python = ">=3.10"
+dependencies = ["openpyxl>=3.1"]
+
+[project.optional-dependencies]
+extraction = ["pdfplumber>=0.10"]
+verification = ["pytest>=7", "playwright>=1.40"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,0 +1,51 @@
+{
+  "date_reference": "2025-06-30",
+  "genere_le": "2026-10-06T23:54:16+00:00",
+  "sources": {
+    "inventaire_pdf": {
+      "url": "https://docs.am.eu.rothschildandco.com/RASA_88e4b412-e3e1-e411-80c8-005056924e5f_FR_EN.pdf",
+      "description": "R-co Conviction Credit Euro, inventaire au 30/06/2025",
+      "fichier": "brut/inventaire.pdf",
+      "present": true,
+      "sha256": "9863e148ff46fb90108eb0dc91b20e115c727489119e8c69410915f157817641"
+    },
+    "bce_5y": {
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y?startPeriod=2021-06-30&endPeriod=2025-06-30&format=csvdata",
+      "description": "BCE, courbe AAA, taux zéro-coupon 5 ans",
+      "fichier": "brut/ecb-5y.csv",
+      "present": true,
+      "sha256": "98fc0f244cc1e51c4acc2eeed0f0bcbd89656387b153735ab0dc7a46e45b60cf"
+    },
+    "bce_2y_10y": {
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y+SR_10Y?startPeriod=2021-06-30&endPeriod=2025-06-30&format=csvdata",
+      "description": "BCE, courbe AAA, taux zéro-coupon 2 et 10 ans",
+      "fichier": "brut/ecb-2y-10y.csv",
+      "present": true,
+      "sha256": "aae66bebcad921d3f5b64958d32f33ab407375384a8687e5b122966599f3276a"
+    },
+    "bbk_entreprises": {
+      "url": "https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.UMR.RD.EUR.X2000.B.A.A.R.A.A._Z._Z.A?format=csv&lang=de",
+      "description": "Bundesbank, rendement moyen des obligations d'entreprises (Nicht-MFIs), quotidien",
+      "fichier": "brut/bbk-entreprises.csv",
+      "present": true,
+      "sha256": "1750cd50a0933031132cbae7534d7fed145ddc7111a4e1656baf5f8a0673372f"
+    },
+    "bbk_bund": {
+      "url": "https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.UMR.RD.EUR.S1311.B.A604.A.R.A.A._Z._Z.A?format=csv&lang=de",
+      "description": "Bundesbank, rendement moyen des titres fédéraux cotés, quotidien",
+      "fichier": "brut/bbk-bund.csv",
+      "present": true,
+      "sha256": "c1253de85a0113f7d6333f7e42634cb93479f8ef5d1afb40b5415141230358f7"
+    }
+  },
+  "derives": {
+    "inventory-fixed-eur.csv": "ff6ea8e447bb1ce947b9fd3d78e8c5810ee8d64beea9e84fda1659baa757b52a",
+    "ecb-curves.csv": "a29a08d03198bd10fc55abc01e1209c23909cd6d67414f3f07a748c84119e7e5",
+    "spread-credit.csv": "cb9808ff04a73603ef4c6f1569864b423e5995178f5c160a02eed920ce15613d"
+  },
+  "controles": {
+    "lignes_inventaire": 169,
+    "dates_courbes": 1024,
+    "dates_spread": 1021
+  }
+}

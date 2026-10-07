@@ -1,0 +1,410 @@
+{
+  "date_reference": "2025-06-30",
+  "univers": {
+    "lignes": 167,
+    "valeur": 2592226795.78,
+    "exclues": [
+      {
+        "isin": "FR0012317451",
+        "libelle": "AGRIPOLE 5.0 11-19",
+        "motifs": [
+          "Échéance dépassée",
+          "Valorisation nulle",
+          "Prix daté du 16/12/2019"
+        ]
+      },
+      {
+        "isin": "IT0005440646",
+        "libelle": "CMC RAV 2.0 12-26",
+        "motifs": [
+          "Valorisation nulle"
+        ]
+      }
+    ]
+  },
+  "spread_raccorde": true,
+  "methode_spread": "dts",
+  "confiance": 0.99,
+  "var": 20982291.937905774,
+  "es": 29274800.07049246,
+  "contributions_facteurs": {
+    "Taux 2 ans": 1812072.0407663889,
+    "Taux 5 ans": 6351136.66461471,
+    "Taux 10 ans": 3859657.3933812333,
+    "Spread crédit": 17251933.971730128
+  },
+  "contributions_lignes": {
+    "AT0000A3KDQ3": 282373.3651098558,
+    "AT000B122080": 11709.906881673449,
+    "AT000B122296": 597869.3259517389,
+    "BE0002938190": 270150.9837394045,
+    "BE0390119825": 148718.34431415267,
+    "BE0390128917": 164126.80231759555,
+    "BE0390149152": 187645.7912492682,
+    "BE0390161272": 312078.67450332927,
+    "BE0390222884": 314115.6779883196,
+    "BE6327721237": 74302.40848637646,
+    "BE6331562817": 77704.78059062015,
+    "BE6332786449": 14313.957047988579,
+    "BE6343437255": 183217.4013732656,
+    "BE6351290216": 363031.8618812725,
+    "BE6356733327": 351655.9592487767,
+    "BE6363869874": 347112.2833544258,
+    "CH1433226292": 126111.30502285586,
+    "DE0001102473": 765111.8706775662,
+    "DE000A30VGD9": 52586.98800712274,
+    "DE000A30VQB2": 129638.51020701612,
+    "DE000A3L69Y6": 106138.64883020327,
+    "DE000A3LHK80": 52220.80246731019,
+    "DE000HCB0B36": 114922.40653975791,
+    "DE000HCB0B44": 30422.70357750112,
+    "DE000HCB0B69": 73144.12689239279,
+    "DE000MHB66N7": 202846.9863789791,
+    "DK0030512421": 183243.0100854448,
+    "ES0200002089": 257412.53612431983,
+    "FR0013222551": 37342.605925468684,
+    "FR0013232444": 24742.09123780354,
+    "FR0013430840": 70853.14334282721,
+    "FR0013453974": 70933.44644180457,
+    "FR0013455862": 2342.1823429964147,
+    "FR0013519261": 71250.03491931049,
+    "FR0013523602": 139713.23758300068,
+    "FR0014001I68": 70558.06481823871,
+    "FR0014004QI5": 27943.234508457914,
+    "FR0014006TQ7": 50179.08732106184,
+    "FR0014007YA9": 68448.02465716422,
+    "FR0014008JQ4": 35383.068164547025,
+    "FR001400D4D6": 20544.987822219864,
+    "FR001400DAO4": 24493.645005398233,
+    "FR001400F6E7": 18664.455889557576,
+    "FR001400IIU3": 242546.20982730557,
+    "FR001400J150": 304708.9053004284,
+    "FR001400KKX9": 54849.201912712015,
+    "FR001400L263": 154646.46274929447,
+    "FR001400LCK1": 146006.7831688362,
+    "FR001400P728": 179070.7443822153,
+    "FR001400RIT6": 280614.55732247396,
+    "FR001400RNN9": 234700.9939878104,
+    "FR001400SGZ5": 559101.0595668871,
+    "FR001400T118": 709084.5055637038,
+    "FR001400U660": 206468.18265358164,
+    "FR001400WRF6": 146771.2990663423,
+    "FR001400WTD7": 81129.66499235177,
+    "FR001400YPL4": 250730.61493311526,
+    "FR001400YQA5": 448258.08669542475,
+    "FR001400ZQ88": 367609.8504592655,
+    "FR0014010J17": 793821.2456095263,
+    "FR0014010XH0": 750603.7852185752,
+    "IT0005561367": 177668.42225132755,
+    "IT0005584260": 17939.551608278576,
+    "IT0005611139": 233033.51191561433,
+    "PTGGDDOM0008": 119590.68627131467,
+    "XS1385945131": 5156.375602164033,
+    "XS1489391109": 10126.255757422468,
+    "XS1794675931": 22532.45191894303,
+    "XS2001315766": 14863.98175642002,
+    "XS2027364327": 13342.964257901282,
+    "XS2168693385": 135745.2752091218,
+    "XS2203802462": 20081.986365432484,
+    "XS2236273582": 94341.93254997647,
+    "XS2243564478": 47785.683156903455,
+    "XS2244936659": 26582.595653983193,
+    "XS2247718435": 33120.64210784084,
+    "XS2267889991": 26421.43242578957,
+    "XS2286012849": 55511.01562207528,
+    "XS2293733825": 40727.30818275995,
+    "XS2294495838": 16575.63179297813,
+    "XS2300292963": 87137.16010066647,
+    "XS2300293003": 195832.5939395355,
+    "XS2310411090": 21714.116409046095,
+    "XS2322438990": 129225.03515087094,
+    "XS2331921390": 28453.60866276431,
+    "XS2341269970": 42045.934976246266,
+    "XS2347284742": 62234.70106111311,
+    "XS2348703864": 89025.5286540753,
+    "XS2351301499": 21741.76720955548,
+    "XS2360853332": 98747.30111357452,
+    "XS2362994068": 263821.61084914184,
+    "XS2381853436": 63852.90907398455,
+    "XS2387052744": 1701.3236049616914,
+    "XS2390400807": 267264.81362368533,
+    "XS2393687350": 292095.2564652134,
+    "XS2430287362": 110568.54548811055,
+    "XS2430287529": 4389.168974048801,
+    "XS2468979302": 55582.454361382785,
+    "XS2498554992": 12582.469371371084,
+    "XS2551903425": 158070.09172169323,
+    "XS2572996606": 130908.23966840412,
+    "XS2576067081": 172717.61789633826,
+    "XS2577384691": 49090.20341784675,
+    "XS2587104444": 359380.91545781714,
+    "XS2594025814": 37104.91104051172,
+    "XS2613209670": 302071.8054824773,
+    "XS2617457127": 274344.7286770709,
+    "XS2621007660": 251794.4737304121,
+    "XS2621757405": 28031.048521981087,
+    "XS2625194225": 202506.96145234373,
+    "XS2626289222": 141890.88152158624,
+    "XS2656537664": 13907.74326276923,
+    "XS2662538425": 223732.1597916145,
+    "XS2698045130": 179195.6853143718,
+    "XS2708354811": 26044.877186239686,
+    "XS2713801780": 122040.29543288941,
+    "XS2723556572": 171095.30915756198,
+    "XS2728561098": 80238.83551356461,
+    "XS2742660660": 291586.1396580245,
+    "XS2753547673": 33686.04626148265,
+    "XS2776519980": 470110.00396154437,
+    "XS2776890068": 182973.96130553063,
+    "XS2778383898": 46017.44460499513,
+    "XS2778764006": 232532.32966454176,
+    "XS2792575453": 95613.95783719653,
+    "XS2805234700": 45789.628903233664,
+    "XS2807518639": 346648.12008234893,
+    "XS2815976126": 282999.31423663173,
+    "XS2816031160": 99032.89568517623,
+    "XS2823261834": 538687.3276313815,
+    "XS2825539617": 289631.0460172275,
+    "XS2828685631": 163594.99228897615,
+    "XS2835773255": 187316.82773171307,
+    "XS2844398482": 121876.02014666899,
+    "XS2852136063": 175124.30225010694,
+    "XS2855975285": 32241.711105457292,
+    "XS2860457071": 197221.2471794269,
+    "XS2875106168": 234101.6425697283,
+    "XS2887896574": 103035.91625314242,
+    "XS2893175625": 87591.88517725137,
+    "XS2894910665": 226506.18364987892,
+    "XS2905583014": 271926.96661605855,
+    "XS2919072962": 470387.108655479,
+    "XS2919214937": 388907.3592131473,
+    "XS2923451194": 264274.3029788713,
+    "XS2925845393": 99799.21089419383,
+    "XS2938562068": 179335.5540844106,
+    "XS3003232272": 125815.93785936099,
+    "XS3003295519": 314056.1919156539,
+    "XS3004195007": 223527.5469424665,
+    "XS3019303133": 262734.3562300207,
+    "XS3024074950": 262536.9225438755,
+    "XS3027988263": 277650.7259540252,
+    "XS3032046016": 118604.30548918588,
+    "XS3040316971": 183078.40805008807,
+    "XS3040333638": 109745.91078789528,
+    "XS3047452316": 91086.4488728093,
+    "XS3060660050": 229985.60093115244,
+    "XS3064423174": 215940.77468243605,
+    "XS3071337847": 388885.77279441507,
+    "XS3074456891": 222458.1070412017,
+    "XS3077018714": 409161.22927258146,
+    "XS3080462222": 104944.8763953442,
+    "XS3086867440": 395088.6952641839,
+    "XS3087726595": 137697.24198957332,
+    "XS3090952519": 521813.22712066665,
+    "XS3100767915": 200066.67373036986
+  },
+  "backtest": {
+    "exceptions": 4,
+    "kupiec_lr": 0.7691383643858458,
+    "kupiec_p": 0.380483738238954
+  },
+  "stress": {
+    "Choc combiné": {
+      "lineaire": 305562031.72564256,
+      "taux": 127003663.34855682,
+      "credit": 178558368.37708578,
+      "revalorisee": 283116696.5046674
+    },
+    "Hausse des taux": {
+      "lineaire": 254007326.69711363,
+      "taux": 254007326.69711363,
+      "credit": 0.0,
+      "revalorisee": 238936711.61911705
+    },
+    "Élargissement du crédit": {
+      "lineaire": 238077824.50278103,
+      "taux": 0.0,
+      "credit": 238077824.50278103,
+      "revalorisee": 223646739.91120985
+    },
+    "Récession": {
+      "lineaire": 170593617.27991968,
+      "taux": -127003663.34855682,
+      "credit": 297597280.6284765,
+      "revalorisee": 162212114.51921117
+    }
+  },
+  "ventes": [
+    {
+      "description": "Vente au prorata de toutes les lignes",
+      "montant": 20000000,
+      "es_apres": 29048934.030390177,
+      "reduction_par_million": 11293.30200511422
+    },
+    {
+      "description": "Vente de MALA HU 4.5 06-35 (premier contributeur à l'ES)",
+      "montant": 20000000,
+      "es_apres": 28832951.847954378,
+      "reduction_par_million": 22092.41112690419
+    },
+    {
+      "description": "Vente de KLES PR 5.07 07-35 (ES par euro le plus élevé)",
+      "montant": 20000000,
+      "es_apres": 28675584.3834956,
+      "reduction_par_million": 29960.784349843114
+    }
+  ],
+  "alertes": [
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "AT000B122296",
+      "libelle": "VOLK WI 5.5 12-35",
+      "constat": "Maturité de 10,43 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "BE6351290216",
+      "libelle": "LONZ FI 3.875 04-36",
+      "constat": "Maturité de 10,82 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "À instruire",
+      "controle": "Titre échu toujours en inventaire",
+      "isin": "FR0012317451",
+      "libelle": "AGRIPOLE 5.0 11-19",
+      "constat": "Échéance au 27/11/2019, valorisé 0 EUR",
+      "suite": "Confirmer le statut du titre (remboursement, défaut, restructuration) et la valeur de recouvrement"
+    },
+    {
+      "severite": "À instruire",
+      "controle": "Valorisation nulle",
+      "isin": "FR0012317451",
+      "libelle": "AGRIPOLE 5.0 11-19",
+      "constat": "Prix 0,00, valeur 0 EUR pour un nominal de 1 800 000 EUR",
+      "suite": "Documenter la méthode de valorisation retenue et la source du prix"
+    },
+    {
+      "severite": "À instruire",
+      "controle": "Prix ancien",
+      "isin": "FR0012317451",
+      "libelle": "AGRIPOLE 5.0 11-19",
+      "constat": "Dernier prix daté du 16/12/2019 (2023 jours)",
+      "suite": "Obtenir un prix récent ou justifier l'absence de cotation"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "FR001400J150",
+      "libelle": "RTE EDF 3.75 07-35",
+      "constat": "Maturité de 10,01 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "FR001400ZQ88",
+      "libelle": "MUTU AS 4.625 02-36",
+      "constat": "Maturité de 10,65 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "FR0014010XH0",
+      "libelle": "KLES PR 5.07 07-35",
+      "constat": "Maturité de 10,01 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "À instruire",
+      "controle": "Valorisation nulle",
+      "isin": "IT0005440646",
+      "libelle": "CMC RAV 2.0 12-26",
+      "constat": "Prix 0,00, valeur 0 EUR pour un nominal de 671 283 EUR",
+      "suite": "Documenter la méthode de valorisation retenue et la source du prix"
+    },
+    {
+      "severite": "À examiner",
+      "controle": "Spread élevé",
+      "isin": "XS2393687350",
+      "libelle": "CONS EN 5.0 10-28",
+      "constat": "Spread calibré de 881 pb (prix 85,65)",
+      "suite": "Suivi crédit : analyse de l'émetteur et des contraintes du mandat"
+    },
+    {
+      "severite": "À examiner",
+      "controle": "Spread élevé",
+      "isin": "XS2587104444",
+      "libelle": "IM GROU 8.0 03-28",
+      "constat": "Spread calibré de 2 912 pb (prix 56,06)",
+      "suite": "Suivi crédit : analyse de l'émetteur et des contraintes du mandat"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "XS2776890068",
+      "libelle": "HONE IN 3.75 03-36",
+      "constat": "Maturité de 10,67 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "Information",
+      "controle": "Extrapolation de courbe",
+      "isin": "XS2823261834",
+      "libelle": "EATO CA 3.802 05-36",
+      "constat": "Maturité de 10,89 ans, au-delà du nœud 10 ans",
+      "suite": "Taux supposé constant au-delà de 10 ans ; ajouter un nœud long si le poids augmente"
+    },
+    {
+      "severite": "À examiner",
+      "controle": "Spread élevé",
+      "isin": "XS2835773255",
+      "libelle": "INTL PE 10.75 12-29",
+      "constat": "Spread calibré de 670 pb (prix 110,78)",
+      "suite": "Suivi crédit : analyse de l'émetteur et des contraintes du mandat"
+    },
+    {
+      "severite": "À examiner",
+      "controle": "Spread élevé",
+      "isin": "XS2919072962",
+      "libelle": "ASK CHE 10.0 11-29",
+      "constat": "Spread calibré de 857 pb (prix 99,93)",
+      "suite": "Suivi crédit : analyse de l'émetteur et des contraintes du mandat"
+    }
+  ],
+  "donnees_indisponibles": [
+    {
+      "theme": "Spread crédit approché",
+      "constat": "Le facteur de spread est un indice d'obligations d'entreprises allemandes (Bundesbank) : il ne reflète ni la composition ni la notation exacte du fonds.",
+      "suite": "Remplacer par un indice crédit euro sous licence si l'équipe en dispose"
+    },
+    {
+      "theme": "Dérivés et couvertures",
+      "constat": "Les instruments à terme du fonds ne sont pas intégrés ; une couverture de duration réduirait le risque de taux.",
+      "suite": "Extraire la section des instruments financiers à terme de l'inventaire"
+    },
+    {
+      "theme": "Notations",
+      "constat": "Aucune notation ni historique de migration dans les sources publiques importées.",
+      "suite": "Raccorder un référentiel de notations pour suivre les passages en haut rendement"
+    },
+    {
+      "theme": "Données ESG",
+      "constat": "Aucune donnée ESG émetteur importée ; l'absence de donnée n'est pas une mauvaise note.",
+      "suite": "Raccorder une source ESG documentée"
+    },
+    {
+      "theme": "Autres sections du fonds",
+      "constat": "Taux variable, autres devises et liquidités du fonds hors périmètre.",
+      "suite": "Étendre l'extraction à l'inventaire complet"
+    }
+  ],
+  "empreintes": {
+    "inventory-fixed-eur.csv": "ff6ea8e447bb1ce947b9fd3d78e8c5810ee8d64beea9e84fda1659baa757b52a",
+    "ecb-curves.csv": "a29a08d03198bd10fc55abc01e1209c23909cd6d67414f3f07a748c84119e7e5",
+    "spread-credit.csv": "cb9808ff04a73603ef4c6f1569864b423e5995178f5c160a02eed920ce15613d"
+  }
+}
