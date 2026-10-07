@@ -4,6 +4,8 @@ Suivi du risque de taux et de crédit d'une poche obligataire réellement publi�
 Shortfall, contributions, stress, aide à la décision et contrôles de données. Trois restitutions
 calculent la même chose : le moteur Python, un classeur Excel en formules et un tableau de bord web.
 
+**Tableau de bord en ligne** : https://alamine-maouloud.github.io/projects_finance-ai/finance-quant/fixed-income-risk-monitor/sorties/RiskLens.html
+
 Projet personnel, sans lien avec Rothschild & Co. Aucune recommandation d'investissement.
 
 ## La question traitée
